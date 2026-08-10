@@ -21,7 +21,7 @@ reach the query builder.
 from __future__ import annotations
 
 from . import canonical
-from .candidates import candidate_slate, mesh_only_blocks
+from .candidates import candidate_slate, mesh_only_blocks, span_groups
 from .domain_vocab import get_vocab
 from .mesh_index import get_index
 from .openrouter_client import (
@@ -56,36 +56,53 @@ def _blocks_from_concepts(concepts: list[dict]) -> list[dict]:
     } for c in concepts]
 
 
-def _blocks_from_selection(selection: dict, slate: dict) -> tuple[list[dict], list[int]]:
+def _blocks_from_selection(selection: dict, slate: dict, *,
+                           group_by_span: bool = True) -> tuple[list[dict], list[int]]:
     """
     Hybrid selection (candidate ids) -> canonicaliser input.
 
     Ids outside the slate are dropped: the model is not allowed to smuggle in
     vocabulary, and an out-of-range id is the one failure mode this design has.
+
+    group_by_span: the model chooses WHICH candidates; the question decides how
+    they group into ANDed blocks (candidates.span_groups). Two models that select
+    the same headings then compile to the same query even if one of them would
+    have ORed facets the other ANDed. The model's slot label, block name and
+    free-text follow its ids into the group they land in.
     """
     by_id = {c["id"]: c for c in slate.get("candidates", [])}
-    blocks, bad_ids = [], []
+    bad_ids: list[int] = []
     used: set[int] = set()
-    for b in selection.get("blocks", []):
-        labels = []
+    groups = span_groups(slate) if group_by_span else {}
+
+    grouped: dict[object, dict] = {}
+    freetext_only: list[dict] = []
+    for pos, b in enumerate(selection.get("blocks", [])):
+        ids = []
         for i in b.get("ids", []):
-            cand = by_id.get(i)
-            if cand is None:
+            if i not in by_id:
                 bad_ids.append(i)
                 continue
             if i in used:            # an id may only anchor one block
                 continue
             used.add(i)
-            labels.append(cand["label"])
-        if not labels and not b.get("freetext"):
+            ids.append(i)
+        if not ids:
+            if b.get("freetext"):
+                freetext_only.append({
+                    "name": b.get("name", ""), "slot": b.get("slot", ""),
+                    "mesh": [], "freetext": b.get("freetext", []), "explode": True,
+                })
             continue
-        blocks.append({
-            "name": b.get("name", ""),
-            "slot": b.get("slot", ""),
-            "mesh": labels,
-            "freetext": b.get("freetext", []),
-            "explode": True,
-        })
+        for i in sorted(ids):
+            key = groups.get(i, i) if group_by_span else pos
+            g = grouped.setdefault(key, {"name": b.get("name", ""), "slot": b.get("slot", ""),
+                                         "mesh": [], "freetext": [], "explode": True})
+            g["mesh"].append(by_id[i]["label"])
+            for t in b.get("freetext", []):
+                if t not in g["freetext"]:
+                    g["freetext"].append(t)
+    blocks = [grouped[k] for k in sorted(grouped, key=str)] + freetext_only
     return blocks, bad_ids
 
 
@@ -158,7 +175,8 @@ def build(question: str, *, domains: list[str] | None = None, mode: str = "llm",
           model: str | None = None, api_key: str | None = None,
           extra_context: str = "", seed: int | None = None,
           prompt_version: str | None = None, strict: bool = True,
-          fallback: bool = True) -> dict:
+          fallback: bool = True, merge_slots: bool = False,
+          group_by_span: bool = True) -> dict:
     """Synchronous build (evaluation harness / CLI)."""
     mode = _check_mode(mode)
     ix = get_index()
@@ -182,7 +200,7 @@ def build(question: str, *, domains: list[str] | None = None, mode: str = "llm",
             raw = select_candidates(question, slate, domains=domains, model=model,
                                     api_key=api_key, extra_context=extra_context, seed=seed)
             notes = raw.get("notes", "")
-            blocks, bad_ids = _blocks_from_selection(raw, slate)
+            blocks, bad_ids = _blocks_from_selection(raw, slate, group_by_span=group_by_span)
         except OpenRouterError:
             if not fallback:
                 raise
@@ -193,9 +211,12 @@ def build(question: str, *, domains: list[str] | None = None, mode: str = "llm",
             notes = (notes + " | empty selection; mesh_only fallback.").strip(" |")
             fell_back = True
 
-    # Slot merging is only meaningful for a real selection: the fallback's blocks
-    # are all unslotted, and merging them would OR facets meant to be ANDed.
-    res = _assemble(blocks, domains, merge_slots=(mode == "hybrid" and not fell_back),
+    # Slot merging is OFF by default: models label the same content with different
+    # slots ("Microglia" came back as population, context AND intervention across
+    # models), so merging on that field lets the least reliable part of the answer
+    # change what is ANDed vs ORed. Never merge the fallback's unslotted blocks.
+    res = _assemble(blocks, domains,
+                    merge_slots=(merge_slots and mode == "hybrid" and not fell_back),
                     strict=strict, ix=ix)
     return {**res, "mode": mode, "model": raw.get("model") or model or "",
             "prompt_version": (prompt_version or "v2") if mode == "llm" else mode,
@@ -206,7 +227,8 @@ async def build_async(question: str, *, domains: list[str] | None = None, mode: 
                       model: str | None = None, api_key: str | None = None,
                       extra_context: str = "", seed: int | None = None,
                       prompt_version: str | None = None, strict: bool = True,
-                      fallback: bool = True) -> dict:
+                      fallback: bool = True, merge_slots: bool = False,
+                      group_by_span: bool = True) -> dict:
     """Async build (FastAPI endpoint)."""
     mode = _check_mode(mode)
     ix = get_index()
@@ -231,7 +253,7 @@ async def build_async(question: str, *, domains: list[str] | None = None, mode: 
                                                 api_key=api_key, extra_context=extra_context,
                                                 seed=seed)
             notes = raw.get("notes", "")
-            blocks, bad_ids = _blocks_from_selection(raw, slate)
+            blocks, bad_ids = _blocks_from_selection(raw, slate, group_by_span=group_by_span)
         except OpenRouterError:
             if not fallback:
                 raise
@@ -242,9 +264,12 @@ async def build_async(question: str, *, domains: list[str] | None = None, mode: 
             notes = (notes + " | empty selection; mesh_only fallback.").strip(" |")
             fell_back = True
 
-    # Slot merging is only meaningful for a real selection: the fallback's blocks
-    # are all unslotted, and merging them would OR facets meant to be ANDed.
-    res = _assemble(blocks, domains, merge_slots=(mode == "hybrid" and not fell_back),
+    # Slot merging is OFF by default: models label the same content with different
+    # slots ("Microglia" came back as population, context AND intervention across
+    # models), so merging on that field lets the least reliable part of the answer
+    # change what is ANDed vs ORed. Never merge the fallback's unslotted blocks.
+    res = _assemble(blocks, domains,
+                    merge_slots=(merge_slots and mode == "hybrid" and not fell_back),
                     strict=strict, ix=ix)
     return {**res, "mode": mode, "model": raw.get("model") or model or "",
             "prompt_version": (prompt_version or "v2") if mode == "llm" else mode,

@@ -18,6 +18,7 @@ maximal match becomes its own ANDed block.
 """
 from __future__ import annotations
 
+import itertools
 import re
 
 from .mesh_index import MeshIndex
@@ -208,7 +209,8 @@ def phrase_candidates(ix: MeshIndex, question: str, spans: list[dict], *,
                 continue
             seen.add(dui)
             out.append({"dui": dui, "label": d.label, "span": " ".join(words),
-                        "relation": "phrase", "via": term})
+                        "relation": "phrase", "via": term,
+                        "start": win[0][0], "size": win[-1][0] - win[0][0] + 1})
             added += 1
     return out
 
@@ -283,7 +285,8 @@ def candidate_slate(question: str, ix: MeshIndex, *, include_broader: bool = Tru
     pool: dict[str, dict] = {}
     for s in spans:
         pool.setdefault(s["dui"], {"dui": s["dui"], "label": s["label"],
-                                   "span": s["span"], "relation": "exact"})
+                                   "span": s["span"], "relation": "exact",
+                                   "start": s["start"], "size": s["size"]})
     if include_phrase:
         for c in phrase_candidates(ix, question, spans):
             pool.setdefault(c["dui"], c)
@@ -295,7 +298,10 @@ def candidate_slate(question: str, ix: MeshIndex, *, include_broader: bool = Tru
                 d = ix.get(p)
                 if d is None:
                     continue
-                pool[p] = {"dui": p, "label": d.label, "span": s["span"], "relation": "broader"}
+                # a broader term inherits its child's span, so it ends up in the
+                # same OR group as the phrase it generalises
+                pool[p] = {"dui": p, "label": d.label, "span": s["span"],
+                           "relation": "broader", "start": s["start"], "size": s["size"]}
 
     cands = sorted(pool.values(), key=lambda c: (c["label"].lower(), c["dui"]))
     # Broader terms must never crowd out the ones the question actually names.
@@ -309,6 +315,49 @@ def candidate_slate(question: str, ix: MeshIndex, *, include_broader: bool = Tru
         c["trees"] = ix.trees(c["dui"])
     return {"candidates": cands, "spans": spans,
             "unmatched": unmatched_phrases(question, spans)}
+
+
+def span_groups(slate: dict) -> dict[int, int]:
+    """
+    Candidate id -> OR-group id, from the question's own structure.
+
+    Two candidates belong in the same OR block when the question words they came
+    from overlap: "RNA sequencing" and the "single-cell sequencing" window share
+    the word "sequencing", so `Sequence Analysis, RNA` and `Single-Cell Gene
+    Expression Analysis` are alternatives for one facet — while "hippocampus" and
+    "optogenetic" share nothing and must stay ANDed.
+
+    This takes the grouping decision away from the model, which is the decision it
+    is least consistent about: two models selected the *identical* four headings
+    for one question and still produced different queries because one ORed
+    `Optogenetics` with `Hippocampus`. Grouping is a property of the question, so
+    it belongs in the deterministic layer.
+
+    Union-find over word ranges; group ids are the smallest member id, so the
+    numbering is a pure function of the slate.
+    """
+    cands = slate.get("candidates", [])
+    parent: dict[int, int] = {c["id"]: c["id"] for c in cands}
+
+    def find(x: int) -> int:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a: int, b: int) -> None:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[max(ra, rb)] = min(ra, rb)
+
+    for a, b in itertools.combinations(cands, 2):
+        a_start, a_end = a.get("start", -1), a.get("start", -1) + a.get("size", 0)
+        b_start, b_end = b.get("start", -1), b.get("start", -1) + b.get("size", 0)
+        if a_start < 0 or b_start < 0:
+            continue
+        if a_start < b_end and b_start < a_end:      # word ranges intersect
+            union(a["id"], b["id"])
+    return {c["id"]: find(c["id"]) for c in cands}
 
 
 def mesh_only_blocks(question: str, ix: MeshIndex) -> list[dict]:

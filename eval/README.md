@@ -28,8 +28,15 @@ question) and scores four things:
 ```
 
 Notable flags: `--no-strict` keeps the model's free-text instead of index-derived
-terms; `--cache` pins each build (see the caveat below); `--out` sets the JSON
-report path (default `data/determinism_v2.json`).
+terms; `--cache` pins each build (see the caveat below); `--no-span-grouping` lets
+the *model* decide which candidates are ORed instead of grouping them by the
+question spans they came from; `--out` sets the JSON report path (default
+`data/determinism_v2.json`).
+
+Every hybrid run also reports a **free ablation row**: the same selections
+re-grouped with the opposite policy (`hybrid (model-grouped)` when span grouping is
+on). It costs no extra LLM calls and isolates "who decides what is ORed" from
+"which vocabulary was picked".
 
 **Caching caveat.** `--cache` stores one build per (mode, model, question) and
 replays it, which makes within-model determinism **1.00 by construction**. The

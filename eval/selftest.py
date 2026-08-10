@@ -16,7 +16,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from backend import canonical, pipeline, query_builder            # noqa: E402
-from backend.candidates import candidate_slate, matched_spans, mesh_only_blocks  # noqa: E402
+from backend.candidates import (                                  # noqa: E402
+    candidate_slate, matched_spans, mesh_only_blocks, span_groups)
 from backend.mesh_index import get_index                          # noqa: E402
 
 Q1 = ("Does optogenetic stimulation of the hippocampus improve memory "
@@ -102,6 +103,36 @@ def main() -> int:
           any("off-target" in u.lower() for u in candidate_slate(Q3, ix)["unmatched"]))
     check("generic words never become blocks",
           not {"Disease", "Models, Theoretical"} & {b["mesh"][0] for b in mesh_only_blocks(Q3, ix)})
+
+    print("\nspan grouping (the question decides what is ORed, not the model)")
+    slate = candidate_slate(Q1, ix)
+    groups = span_groups(slate)
+    gid = {c["label"]: groups[c["id"]] for c in slate["candidates"]}
+    check("a broader term shares its child's group",
+          gid.get("Limbic System") == gid.get("Hippocampus"))
+    check("unrelated facets stay in different groups",
+          gid.get("Hippocampus") != gid.get("Optogenetics"))
+    slate2 = candidate_slate(Q2, ix)
+    g2 = {c["label"]: span_groups(slate2)[c["id"]] for c in slate2["candidates"]}
+    check("overlapping spans share a group (RNA-seq ~ single-cell)",
+          g2.get("Sequence Analysis, RNA") == g2.get("Single-Cell Gene Expression Analysis"))
+    check("Microglia is its own group", g2.get("Microglia") != g2.get("Alzheimer Disease"))
+
+    ids = {c["label"]: c["id"] for c in slate["candidates"]}
+    sel_a = {"blocks": [{"slot": "intervention", "ids": [ids["Optogenetics"]]},
+                        {"slot": "context", "ids": [ids["Hippocampus"]]},
+                        {"slot": "outcome", "ids": [ids["Memory Consolidation"]]}]}
+    sel_b = {"blocks": [{"slot": "intervention",
+                         "ids": [ids["Optogenetics"], ids["Hippocampus"]]},
+                        {"slot": "outcome", "ids": [ids["Memory Consolidation"]]}]}
+    def compile_sel(sel):
+        blocks, _ = pipeline._blocks_from_selection(sel, slate, group_by_span=True)
+        return query_builder.compile_search(
+            pipeline.finalize(canonical.canonicalize_blocks(blocks, ix)["blocks"],
+                              strict=True, ix=ix), {})["hash"]
+    check("same headings, different model grouping -> same query",
+          compile_sel(sel_a) == compile_sel(sel_b),
+          f"{compile_sel(sel_a)} vs {compile_sel(sel_b)}")
 
     print("\nmesh_only determinism")
     h = {query_builder.compile_search(

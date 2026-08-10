@@ -11,7 +11,8 @@
       "Bash(curl -s -m 5 http://127.0.0.1:8077/api/config)",
       "Bash(.venv/bin/python -m json.tool)",
       "Bash(.venv/bin/python eval/selftest.py)",
-      "Bash(pkill -f \"uvicorn backend.app\")"
+      "Bash(pkill -f \"uvicorn backend.app\")",
+      "Bash(.venv/bin/python eval/determinism_eval.py --models google/gemini-3.5-flash,microsoft/phi-4 --modes hybrid,llm --runs 2 --prompt-versions v2 --out /private/tmp/claude-501/-Users-tekrajchhetri-Documents-deterministic-search/999a7f96-7f9f-42da-a6f1-dc2f3798431a/scratchpad/dryrun.json)"
     ]
   }
 }

@@ -591,7 +591,55 @@ Rodentia`, gpt `Animals, Laboratory + Rodentia`) and different numbers of facets
 sufficient**: it is what lets two *agreeing* selections come out byte-identical.
 
 So the fix has to shrink what the model is allowed to choose. Hence three
-strategies, selectable per search (`mode` on `/api/map`):
+strategies, selectable per search (`mode` on `/api/map`).
+
+### Measured (live, 7 models × 3 questions × 3 runs, cache OFF, strict ON)
+
+`data/determinism_v2.json` and `data/determinism_v2_span.json`:
+
+| strategy | within-model | cross-model | heading Jaccard | block-count agr. | **PMID Jaccard** | median hit-count spread |
+|---|---|---|---|---|---|---|
+| `llm` / prompt v1 (the old prompt) | 0.46 | 0.19 | 0.32 | 0.67 | 0.33 | 356,496 |
+| `llm` / prompt v2 | 0.71 | 0.24 | 0.44 | 0.81 | 0.51 | 38,309 |
+| `hybrid`, model-decided grouping | 0.73 | 0.43 | 0.71 | 0.76 | 0.39 | 1,694 |
+| `hybrid`, span grouping (**default**) | 0.75 | 0.38 | 0.70 | 0.71 | **0.56** | 1,771 |
+| `hybrid` + slot merging | 0.71 | 0.38 | 0.71 | 0.67 | – | – |
+| `mesh_only` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0 |
+
+Read it with the floor in mind: with 7 models, a chance-level modal share is
+1/7 = **0.14**, so `llm/v1` at 0.19 is essentially chance — the same place the
+original 11-model run's 0.09 (floor 0.09) sat. Against that floor:
+
+- **Prompt v2 is a real improvement, and mostly not in byte agreement.** Same-model
+  reproducibility 0.46 → 0.71, heading overlap 0.32 → 0.44, agreement on how many
+  facets a question has 0.67 → 0.81, retrieved-corpus overlap 0.33 → 0.51. Its
+  sharpest effect is on hallucination: headings that failed exact resolution fell
+  from **104 to 5** across the run, and the median query shrank from 7.7 KB to
+  3.8 KB — the v1 queries were flirting with PubMed's ~8 KB URL limit.
+- **Hybrid is the portability win.** Cross-model 0.43 vs 0.24, heading overlap 0.71
+  vs 0.44, hit-count spread 1,694 vs 38,309. Across every run, models cited **zero**
+  ids outside the slate and **zero** headings failed to resolve — the closed set
+  holds, so hallucination is not merely filtered, it is unrepresentable.
+- **Span grouping trades byte agreement for retrieval agreement, and is worth it.**
+  Byte agreement is unchanged (0.38 vs 0.43 is inside the noise of 7 models × 3
+  questions) because with grouping fixed, disagreement is *only* selection
+  disagreement. But PMID Jaccard rises 0.39 → **0.56**, and on the optogenetics
+  question it goes 0.43 → 0.82 with the hit-count spread collapsing from 1,674 to
+  **43**. The reason is semantic: model-decided grouping sometimes ORed a technique
+  with a brain region, inflating that model's hits from ~113 to ~1,745.
+- **Slot merging makes things worse** (0.43 → 0.38) — the evidence for leaving it
+  off. Models label identical content with different slots, so merging on that field
+  is merging on the least reliable part of the answer.
+- **`mesh_only` is 1.00 on every metric**, including PMID Jaccard, because no model
+  is involved. That is the ceiling for portability and the floor for judgement.
+
+Practical guidance: if the protocol must be reproducible by another lab with a
+different model, use `mesh_only`, or `hybrid` **and record the model**. Within one
+lab, `hybrid` at 0.75 with a saved `protocol.json` is reproducible in the way that
+matters — the protocol pins the selection, not the model's mood.
+
+There were **zero** hard failures in 192 runs (no unparseable JSON, no HTTP
+errors), across models from claude-opus-4.8 down to llama-3.1-8b.
 
 ```mermaid
 flowchart TD
@@ -632,6 +680,41 @@ flowchart TD
   Model-independent by construction (agreement 1.00), and the fallback whenever the
   hybrid selection call fails or comes back empty. It has no judgement: it cannot
   drop an irrelevant lexical match or add a facet the question only implies.
+
+### Who decides what is ORed
+
+Selecting the same headings is not enough. Two models chose the *identical* four
+headings for the optogenetics question and still compiled different queries: one
+ANDed all four, the other ORed `Optogenetics` with `Hippocampus` — which is also
+simply wrong, since a technique and a brain region are not alternatives.
+
+Grouping is a property of the **question**, not of the model, so hybrid mode takes
+that decision back (`candidates.span_groups`): candidates whose source word-spans
+overlap are alternatives for one facet and go in one OR block; candidates from
+disjoint spans stay ANDed. A broader term inherits its child's span, so
+`Limbic System` lands beside `Hippocampus`.
+
+```mermaid
+flowchart LR
+    Q(["…optogenetic stimulation of the hippocampus<br/>improve memory consolidation in rodent models?"])
+    Q --> G1["span 'optogenetic'<br/>Optogenetics · Genetic Techniques"]
+    Q --> G2["span 'hippocampus'<br/>Hippocampus · Limbic System · Cerebral Cortex"]
+    Q --> G3["span 'memory consolidation'<br/>Memory Consolidation · Memory, Long-Term"]
+    Q --> G4["span 'rodent'<br/>Rodentia · Eutheria"]
+    G1 & G2 & G3 & G4 --> AND["each group = one OR block;<br/>groups are ANDed"]
+
+    classDef det fill:#e0f2e9,stroke:#1e8449,stroke-width:1.5px,color:#111;
+    class G1,G2,G3,G4,AND det;
+```
+
+So the division of labour is: **the model picks vocabulary, the question picks
+structure.** The model's slot label, block name and free-text follow its ids into
+whichever group they land in.
+
+Caveat: a question that *enumerates* alternatives in separate words ("in mice and
+rats") gets them ANDed, because their spans are disjoint. `mesh_only` has always
+had this property; in hybrid it is visible in the review step, where merging the
+two blocks is one click.
 
 ### What the slate does that plain lookup does not
 

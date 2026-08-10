@@ -61,6 +61,7 @@ def _load_env(path: Path = ROOT / ".env") -> None:
 _load_env()
 
 from backend import pipeline, query_builder                      # noqa: E402
+from backend.mesh_index import get_index                         # noqa: E402
 from backend.openrouter_client import OpenRouterError            # noqa: E402
 
 DEFAULT_MODELS = [
@@ -93,11 +94,12 @@ def _cache_key(mode, model, prompt_version, question, domains) -> str:
 
 
 def one_run(mode: str, model: str, prompt_version: str, item: dict, *,
-            strict: bool, use_cache: bool) -> dict:
+            strict: bool, use_cache: bool, group_by_span: bool = True) -> dict:
     """Build + compile once. Returns the run record (never raises)."""
     question, domains = item["question"], item.get("domains", [])
     t0 = time.monotonic()
-    cache_file = CACHE_DIR / f"{_cache_key(mode, model, prompt_version, question, domains)}.json"
+    key = _cache_key(mode, model, prompt_version, question, domains)
+    cache_file = CACHE_DIR / f"{key}{'' if group_by_span else '-nospan'}.json"
     try:
         if use_cache and cache_file.exists():
             build = json.loads(cache_file.read_text())
@@ -105,14 +107,27 @@ def one_run(mode: str, model: str, prompt_version: str, item: dict, *,
             build = pipeline.build(question, domains=domains, mode=mode,
                                    model=None if mode == "mesh_only" else model,
                                    prompt_version=prompt_version, strict=strict,
-                                   fallback=True)
+                                   fallback=True, group_by_span=group_by_span)
             if use_cache:
                 CACHE_DIR.mkdir(parents=True, exist_ok=True)
                 cache_file.write_text(json.dumps(build))
         compiled = query_builder.compile_search(build["concepts"], {})
         headings = sorted({h for c in build["concepts"] for h in c["mesh"]})
+        # Free ablation: re-group the SAME selection with the opposite policy, so
+        # "who decides what is ORed" is measured without a second LLM call.
+        alt: dict = {}
+        if mode == "hybrid" and build.get("raw", {}).get("blocks") and build.get("slate"):
+            alt_blocks, _bad = pipeline._blocks_from_selection(
+                build["raw"], build["slate"], group_by_span=not group_by_span)
+            if alt_blocks:
+                res = pipeline._assemble(alt_blocks, domains, merge_slots=False,
+                                         strict=strict, ix=get_index())
+                c = query_builder.compile_search(res["concepts"], {})
+                alt = {"alt_hash": c["hash"], "alt_n_concepts": c["n_concepts"],
+                       "alt_headings": sorted({h for x in res["concepts"] for h in x["mesh"]})}
         return {
             "ok": True,
+            **alt,
             "latency_s": round(time.monotonic() - t0, 2),
             "query": compiled["query"],
             "hash": compiled["hash"],
@@ -155,18 +170,20 @@ def mean_pairwise_jaccard(sets: list[set]) -> float:
     return round(statistics.fmean(jaccard(a, b) for a, b in pairs), 4)
 
 
-def cross_model(per_model: dict[str, dict]) -> dict:
+def cross_model(per_model: dict[str, dict], prefix: str = "") -> dict:
     """
     Agreement between models on one question.
 
     `agreement` is the modal share of byte-identical queries (the strict view);
     `heading_jaccard` is the mean pairwise overlap of heading sets (the semantic
     view); `block_count_agreement` says whether they even agree on how many
-    facets the question has.
+    facets the question has. `prefix` selects the alternate ("alt_") fields.
     """
-    hashes = [r["hash"] for r in per_model.values() if r.get("ok")]
-    headings = [set(r["headings"]) for r in per_model.values() if r.get("ok")]
-    nblocks = [r["n_concepts"] for r in per_model.values() if r.get("ok")]
+    kh, kd, kb = prefix + "hash", prefix + "headings", prefix + "n_concepts"
+    per_model = {m: r for m, r in per_model.items() if r.get("ok") and r.get(kh)}
+    hashes = [r[kh] for r in per_model.values()]
+    headings = [set(r[kd]) for r in per_model.values()]
+    nblocks = [r[kb] for r in per_model.values()]
     out = determinism(hashes)
     return {
         "n_models": len(hashes),
@@ -177,8 +194,26 @@ def cross_model(per_model: dict[str, dict]) -> dict:
         "block_count_agreement": determinism([str(n) for n in nblocks])["score"],
         "consensus_models": sorted(
             m for m, r in per_model.items()
-            if r.get("ok") and r["hash"] == Counter(hashes).most_common(1)[0][0]
+            if r[kh] == Counter(hashes).most_common(1)[0][0]
         ) if hashes else [],
+    }
+
+
+def summarize(within_scores: list[float], cross: list[dict]) -> dict:
+    """Per-strategy means over the per-question cross-model records."""
+    within = [s for s in within_scores if s]
+    return {
+        "within_model_mean": round(statistics.fmean(within), 4) if within else 0.0,
+        "cross_model_mean": round(statistics.fmean(c["agreement"] for c in cross), 4) if cross else 0.0,
+        "heading_jaccard_mean": round(statistics.fmean(c["heading_jaccard"] for c in cross), 4) if cross else 0.0,
+        "block_count_agreement_mean": round(
+            statistics.fmean(c["block_count_agreement"] for c in cross), 4) if cross else 0.0,
+        # the metric a reviewer actually cares about: do the queries return the
+        # same papers, whatever the strings look like
+        "pmid_jaccard_mean": round(statistics.fmean(
+            c["retrieval"]["pmid_jaccard"] for c in cross if "retrieval" in c), 4)
+            if any("retrieval" in c for c in cross) else None,
+        "per_question": cross,
     }
 
 
@@ -224,6 +259,9 @@ def main() -> int:
     ap.add_argument("--cache", action="store_true",
                     help="pin each (mode,model,question) build; makes within-model 1.00 by "
                          "construction — only for re-testing the deterministic layer")
+    ap.add_argument("--no-span-grouping", action="store_true",
+                    help="hybrid: let the MODEL group candidates into blocks instead of "
+                         "grouping them by the question spans they came from")
     ap.add_argument("--retrieval", action="store_true",
                     help="also measure live PubMed PMID overlap across models")
     ap.add_argument("--out", default=str(ROOT / "data" / "determinism_v2.json"))
@@ -250,7 +288,8 @@ def main() -> int:
                         tasks.append((mode, model, pv, qi, item, r))
 
     print(f"Modes: {modes}   models: {len(models)}   questions: {len(questions)}   "
-          f"runs: {args.runs}   strict: {strict}   cache: {args.cache}")
+          f"runs: {args.runs}   strict: {strict}   cache: {args.cache}   "
+          f"span-grouping: {not args.no_span_grouping}")
     print(f"Dispatching {len(tasks)} builds across {args.workers} workers...", flush=True)
 
     results: dict[tuple, list[dict]] = {}
@@ -258,7 +297,8 @@ def main() -> int:
     t0 = time.monotonic()
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         futs = {pool.submit(one_run, mode, model, pv, item, strict=strict,
-                            use_cache=args.cache): (mode, model, pv, qi)
+                            use_cache=args.cache,
+                            group_by_span=not args.no_span_grouping): (mode, model, pv, qi)
                 for (mode, model, pv, qi, item, _r) in tasks}
         for fut, key in futs.items():
             rec = fut.result()
@@ -272,12 +312,13 @@ def main() -> int:
     report: dict = {"generated": time.strftime("%Y-%m-%d %H:%M:%S"), "wall_seconds": wall,
                     "runs_per_cell": args.runs, "strict": strict, "cache": args.cache,
                     "models": models, "modes": modes, "prompt_versions": pvs,
+                    "span_grouping": not args.no_span_grouping,
                     "questions": [q["question"] for q in questions], "cells": [], "by_mode": {}}
 
     for mode in modes:
         for pv in (pvs if mode == "llm" else ["-"]):
             label = f"{mode}" + (f"/{pv}" if mode == "llm" else "")
-            within_scores, cross, cells = [], [], []
+            within_scores, cross, cross_alt, cells = [], [], [], []
             model_list = ["-"] if mode == "mesh_only" else models
             for qi, item in enumerate(questions):
                 per_model: dict[str, dict] = {}
@@ -307,15 +348,19 @@ def main() -> int:
                         {m: r["query"] for m, r in per_model.items()},
                         os.environ.get("NCBI_API_KEY", ""), os.environ.get("NCBI_EMAIL", ""))
                 cross.append(cm)
+                alt = cross_model(per_model, prefix="alt_")
+                if alt["n_models"]:
+                    alt["question"] = item["question"]
+                    cross_alt.append(alt)
             report["cells"].extend(cells)
-            report["by_mode"][label] = {
-                "within_model_mean": round(statistics.fmean(within_scores), 4) if within_scores else 0.0,
-                "cross_model_mean": round(statistics.fmean(c["agreement"] for c in cross), 4),
-                "heading_jaccard_mean": round(statistics.fmean(c["heading_jaccard"] for c in cross), 4),
-                "block_count_agreement_mean": round(
-                    statistics.fmean(c["block_count_agreement"] for c in cross), 4),
-                "per_question": cross,
-            }
+            report["by_mode"][label] = summarize(within_scores, cross)
+            if cross_alt:      # same selections, opposite grouping policy
+                alt_label = label + (" (model-grouped)" if not args.no_span_grouping
+                                     else " (span-grouped)")
+                report["by_mode"][alt_label] = summarize(
+                    [determinism([r["alt_hash"] for r in results.get(k, [])
+                                  if r.get("alt_hash")])["score"]
+                     for k in results if k[0] == mode and k[2] == pv], cross_alt)
 
     Path(args.out).write_text(json.dumps(report, indent=2))
     print_report(report)
@@ -326,11 +371,13 @@ def main() -> int:
 def print_report(report: dict) -> None:
     print("\n" + "=" * 92)
     print(f"{'strategy':22s}{'within-model':>14s}{'cross-model':>13s}"
-          f"{'heading Jaccard':>17s}{'block-count agr.':>18s}")
+          f"{'heading Jaccard':>17s}{'block-count agr.':>18s}{'PMID Jaccard':>14s}")
     print("-" * 92)
     for label, m in report["by_mode"].items():
+        pj = m.get("pmid_jaccard_mean")
         print(f"{label:22s}{m['within_model_mean']:>14.2f}{m['cross_model_mean']:>13.2f}"
-              f"{m['heading_jaccard_mean']:>17.2f}{m['block_count_agreement_mean']:>18.2f}")
+              f"{m['heading_jaccard_mean']:>17.2f}{m['block_count_agreement_mean']:>18.2f}"
+              f"{(f'{pj:.2f}' if pj is not None else '-'):>14s}")
     print("=" * 92)
     print("within-model = same model reruns compile to the same query (reproducibility)")
     print("cross-model  = different models compile to the SAME query (portability)")
