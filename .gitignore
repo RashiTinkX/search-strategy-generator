@@ -1,0 +1,19 @@
+# secrets
+.env
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# editors / os
+.idea/
+.DS_Store
+
+# MeSH source dumps (2 GB each) and the index built from them
+mesh*.nt
+data/mesh.sqlite
+
+# run artifacts (regenerable)
+data/searches/
+data/map_cache/
