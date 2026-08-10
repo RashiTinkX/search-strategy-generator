@@ -49,30 +49,12 @@ def _resolve_provider(model: str) -> tuple[dict, str]:
             return PROVIDERS[prefix], rest
     return _OPENROUTER, model
 
-SYSTEM_PROMPT = """You are a biomedical search strategist helping build an EXHAUSTIVE, \
-reproducible PubMed search for a systematic literature review.
+from .prompts import PROPOSE_PROMPTS, PROPOSE_V1, SELECT_HYBRID, format_slate
 
-Decompose the user's research question into orthogonal CONCEPT BLOCKS (PICO-style: \
-e.g. Population, Intervention/Exposure, Outcome, Method). Blocks are ANDed together; \
-terms within a block are ORed. Aim for high recall — err toward MORE synonyms.
-
-For each concept block provide:
-- "name": short label for the block
-- "mesh_candidates": likely MeSH Descriptor HEADINGS (official controlled-vocabulary \
-terms, e.g. "Neuronal Plasticity", "Magnetic Resonance Imaging"). Give the exact \
-canonical heading you believe exists; do not invent qualifiers.
-- "freetext": free-text title/abstract synonyms, including abbreviations, spelling \
-variants (British/US), plurals, and CURRENT method/tool jargon that MeSH may lack \
-(e.g. "RNA-seq", "scRNA-seq", "connectome", "optogenetics"). These catch articles \
-not yet MeSH-indexed.
-
-Return STRICT JSON only:
-{
-  "concepts": [
-    {"name": "...", "mesh_candidates": ["..."], "freetext": ["..."], "rationale": "..."}
-  ],
-  "notes": "any caveats about scope or ambiguity"
-}"""
+# Kept for back-compat: the original single prompt. New callers pass
+# prompt_version="v2" (see prompts.py for why the rules changed).
+SYSTEM_PROMPT = PROPOSE_V1
+DEFAULT_PROMPT_VERSION = os.environ.get("PROMPT_VERSION", "v2")
 
 
 class OpenRouterError(RuntimeError):
@@ -85,7 +67,8 @@ MAX_TOKENS = int(os.environ.get("OPENROUTER_MAX_TOKENS", "8000"))
 TIMEOUT = float(os.environ.get("OPENROUTER_TIMEOUT", "180"))
 
 
-def _build_request(question, domains, model, extra_context, seed):
+def _build_request(question, domains, model, extra_context, seed,
+                   system: str | None = None, slate_text: str = ""):
     """Shared request assembly for the sync and async paths."""
     model = model or DEFAULT_MODEL
     provider, upstream_model = _resolve_provider(model)
@@ -100,13 +83,18 @@ def _build_request(question, domains, model, extra_context, seed):
         user_msg += f"\nRelevant domains (favor their current jargon): {', '.join(domains)}\n"
     if extra_context:
         user_msg += f"\nAdditional scope notes:\n{extra_context}\n"
+    if slate_text:
+        user_msg += f"\n{slate_text}\n"
 
     payload = {
         "model": upstream_model,
         "temperature": 0,
+        # top_p=1 with temperature 0 is greedy decoding on every provider that
+        # honours it; sending both removes one source of sampling drift.
+        "top_p": 1,
         "max_tokens": MAX_TOKENS,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system or SYSTEM_PROMPT},
             {"role": "user", "content": user_msg},
         ],
         "response_format": {"type": "json_object"},
@@ -122,58 +110,141 @@ def _build_request(question, domains, model, extra_context, seed):
     return provider, payload, headers
 
 
-def _parse_response(status: int, text: str, url: str, model: str) -> dict:
-    """Turn a raw HTTP response into the normalized concept dict (or raise)."""
+def _content(status: int, text: str, url: str) -> str:
+    """Extract the assistant message content from a chat-completions response."""
     if status != 200:
         raise OpenRouterError(f"LLM {status} from {url}: {text[:500]}")
     try:
         data = json.loads(text)
-        content = data["choices"][0]["message"]["content"]
+        return data["choices"][0]["message"]["content"]
     except (json.JSONDecodeError, KeyError, IndexError, TypeError) as e:
         raise OpenRouterError(f"Unexpected LLM response from {url}: {text[:500]}") from e
 
-    parsed = _loads_lenient(content)
+
+def _strs(seq) -> list[str]:
+    return [str(x).strip() for x in (seq or []) if str(x).strip()]
+
+
+def _parse_response(status: int, text: str, url: str, model: str) -> dict:
+    """Turn a raw HTTP response into the normalized concept dict (or raise)."""
+    parsed = _loads_lenient(_content(status, text, url))
     clean = []
     for c in parsed.get("concepts", []):
         if not isinstance(c, dict):
             continue
+        # v2 asks for "mesh"; v1 asked for "mesh_candidates". Accept both so the
+        # evaluation can A/B the prompts through one code path.
+        headings = _strs(c.get("mesh") or c.get("mesh_candidates"))
         clean.append({
             "name": str(c.get("name", "")).strip(),
-            "mesh_candidates": [str(x).strip() for x in c.get("mesh_candidates", []) if str(x).strip()],
-            "freetext": [str(x).strip() for x in c.get("freetext", []) if str(x).strip()],
+            "slot": str(c.get("slot", "")).strip(),
+            "mesh_candidates": headings,
+            "freetext": _strs(c.get("freetext")),
             "rationale": str(c.get("rationale", "")).strip(),
         })
     return {"concepts": clean, "notes": str(parsed.get("notes", "")).strip(), "model": model}
 
 
-def map_question(question: str, domains: list[str] | None = None,
-                 model: str | None = None, api_key: str | None = None,
-                 extra_context: str = "", seed: int | None = None) -> dict:
-    """Synchronous map (used by the determinism test and any sync caller)."""
-    provider, payload, headers = _build_request(question, domains, model, extra_context, seed)
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
+def _parse_selection(status: int, text: str, url: str, model: str) -> dict:
+    """
+    Normalize a hybrid selection response: blocks of candidate ids.
+
+    Ids that are not integers are dropped here; ids that are not in the slate are
+    dropped by the caller (pipeline.py), which owns the slate.
+    """
+    parsed = _loads_lenient(_content(status, text, url))
+    blocks = []
+    for b in parsed.get("blocks", parsed.get("concepts", [])):
+        if not isinstance(b, dict):
+            continue
+        ids: list[int] = []
+        for x in b.get("ids", b.get("candidates", [])) or []:
+            try:
+                ids.append(int(str(x).strip()))
+            except (TypeError, ValueError):
+                continue
+        blocks.append({
+            "name": str(b.get("name", "")).strip(),
+            "slot": str(b.get("slot", "")).strip(),
+            "ids": sorted(set(ids)),
+            "freetext": _strs(b.get("freetext")),
+        })
+    return {"blocks": blocks, "notes": str(parsed.get("notes", "")).strip(), "model": model}
+
+
+def _system_for(prompt_version: str | None) -> str:
+    v = (prompt_version or DEFAULT_PROMPT_VERSION).lower()
+    if v not in PROPOSE_PROMPTS:
+        raise OpenRouterError(f"Unknown prompt version {v!r} (have: {sorted(PROPOSE_PROMPTS)})")
+    return PROPOSE_PROMPTS[v]
+
+
+def _post_sync(provider, payload, headers):
     try:
-        r = requests.post(provider["url"], headers=headers, json=payload, timeout=TIMEOUT)
+        return requests.post(provider["url"], headers=headers, json=payload, timeout=TIMEOUT)
     except requests.RequestException as e:
         raise OpenRouterError(f"LLM request failed ({provider['url']}): {e}") from e
+
+
+async def _post_async(provider, payload, headers):
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            return await client.post(provider["url"], headers=headers, json=payload)
+    except httpx.HTTPError as e:
+        raise OpenRouterError(f"LLM request failed ({provider['url']}): {e}") from e
+
+
+def map_question(question: str, domains: list[str] | None = None,
+                 model: str | None = None, api_key: str | None = None,
+                 extra_context: str = "", seed: int | None = None,
+                 prompt_version: str | None = None) -> dict:
+    """Synchronous map (used by the determinism evaluation and any sync caller)."""
+    provider, payload, headers = _build_request(
+        question, domains, model, extra_context, seed, system=_system_for(prompt_version))
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    r = _post_sync(provider, payload, headers)
     return _parse_response(r.status_code, r.text, provider["url"], model or DEFAULT_MODEL)
 
 
 async def map_question_async(question: str, domains: list[str] | None = None,
                              model: str | None = None, api_key: str | None = None,
-                             extra_context: str = "", seed: int | None = None) -> dict:
+                             extra_context: str = "", seed: int | None = None,
+                             prompt_version: str | None = None) -> dict:
     """Async map (used by the FastAPI endpoint so the event loop isn't blocked)."""
-    import httpx
-    provider, payload, headers = _build_request(question, domains, model, extra_context, seed)
+    provider, payload, headers = _build_request(
+        question, domains, model, extra_context, seed, system=_system_for(prompt_version))
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
-    try:
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            r = await client.post(provider["url"], headers=headers, json=payload)
-    except httpx.HTTPError as e:
-        raise OpenRouterError(f"LLM request failed ({provider['url']}): {e}") from e
+    r = await _post_async(provider, payload, headers)
     return _parse_response(r.status_code, r.text, provider["url"], model or DEFAULT_MODEL)
+
+
+def select_candidates(question: str, slate: dict, domains: list[str] | None = None,
+                      model: str | None = None, api_key: str | None = None,
+                      extra_context: str = "", seed: int | None = None) -> dict:
+    """Hybrid mode (sync): pick blocks out of a deterministic candidate slate."""
+    provider, payload, headers = _build_request(
+        question, domains, model, extra_context, seed,
+        system=SELECT_HYBRID, slate_text=format_slate(slate))
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    r = _post_sync(provider, payload, headers)
+    return _parse_selection(r.status_code, r.text, provider["url"], model or DEFAULT_MODEL)
+
+
+async def select_candidates_async(question: str, slate: dict, domains: list[str] | None = None,
+                                  model: str | None = None, api_key: str | None = None,
+                                  extra_context: str = "", seed: int | None = None) -> dict:
+    """Hybrid mode (async) — used by the FastAPI endpoint."""
+    provider, payload, headers = _build_request(
+        question, domains, model, extra_context, seed,
+        system=SELECT_HYBRID, slate_text=format_slate(slate))
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    r = await _post_async(provider, payload, headers)
+    return _parse_selection(r.status_code, r.text, provider["url"], model or DEFAULT_MODEL)
 
 
 def _loads_lenient(content: str) -> dict:

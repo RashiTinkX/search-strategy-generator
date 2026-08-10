@@ -13,11 +13,14 @@ flowchart TD
     %% ---------------- Step 1: MAP (the only non-deterministic hop) ----------------
     subgraph S1["① MAP  ·  intent understanding & keyword breakdown"]
         direction TB
-        MAP["POST /api/map"]
-        LLM{{"🤖 OpenRouter LLM<br/>temperature = 0<br/><i>proposes only</i>"}}
-        RES["_resolve_mesh()<br/>match every proposed heading"]
+        MAP["POST /api/map<br/>mode = hybrid | llm | mesh_only"]
+        SLATE["candidates.candidate_slate()<br/>MeSH lookup over the question<br/><i>deterministic</i>"]
+        LLM{{"🤖 OpenRouter LLM<br/>temperature = 0<br/><i>proposes (llm) or<br/>selects from the slate (hybrid)</i>"}}
+        RES["canonical.canonicalize_blocks()<br/>exact-only resolution · subsumption<br/>pruning · canonical ordering"]
         AUG["augment free-text with<br/>domain-vocab synonyms"]
-        MAP --> LLM -->|"concepts + candidate<br/>MeSH names + synonyms (JSON)"| RES --> AUG
+        MAP --> SLATE --> LLM
+        MAP --> LLM
+        LLM -->|"blocks + headings<br/>or candidate ids (JSON)"| RES --> AUG
     end
 
     %% ---------------- Step 2: EXPAND (preview) ----------------
@@ -154,11 +157,18 @@ flowchart LR
 | `tree` | `dui`, `tree` | hierarchy positions (e.g. `G11.427.590`) → explosion |
 | `entry_term` | `dui`, `term`, `term_norm` | synonyms / variants → free-text recall |
 
-### 2 · Resolving an LLM-proposed heading (`_resolve_mesh` → `MeshIndex.search`)
+### 2 · Resolving an LLM-proposed heading (`canonical.resolve_strict`)
 
 Each candidate name from the LLM is normalized then matched in a fixed priority
 order. A name that matches nothing simply **drops out** — that is the
 hallucination filter.
+
+> **Changed 2026-08-10.** The auto-accept path is now **exact-match only**
+> (heading, then entry term). The substring tier below is still available to a
+> *human* in the UI, but it no longer feeds the query on its own: it used to
+> auto-select its first hit even when `matched=false`, which is how
+> `"Ziekte, centraalzenuwstelsel-"[MeSH Terms]` — a Dutch label PubMed cannot
+> match — reached a compiled query in the first evaluation.
 
 ```mermaid
 flowchart TD
@@ -420,7 +430,7 @@ flowchart TD
   linear backoff** on 429/5xx. Result order is normalized by PMID so two runs
   produce identical files.
 
-### F · Determinism scoring  (`test.py`)
+### F · Determinism scoring  (`eval/determinism_eval.py`)
 
 For each `(model, query)` we run the pipeline `N` times and score agreement at
 four levels. The score is the **modal frequency** — how often the single most
@@ -543,6 +553,117 @@ Because `--strict` sources terms from MeSH, even a tiny local model works: a 1B
 `ollama/llama3.2:1b` writes poor free-text (full sentences), but that is
 discarded — it only needs to *name* MeSH-resolvable concepts, and the
 deterministic layer supplies exhaustive, reproducible synonyms.
+
+## Cross-model determinism: three strategies (2026-08-10)
+
+The first evaluation measured two different things and only one of them was good:
+
+| | what it means | baseline result |
+|---|---|---|
+| **within-model** | same model, rerun → same query | 1.00 — but **with `--cache`**, which pins the LLM output, so it was true by construction |
+| **cross-model** | different models, same question → same query | **0.09** — 11 models produced 11 distinct queries |
+
+Cross-model agreement matters because it decides what a protocol has to record.
+At 0.09, "we searched PubMed with this question" is not a reproducible method;
+only "…with this question, this model, this strategy" is.
+
+### Why the queries differed
+
+Replaying the 33 archived proposals (`eval/replay_baseline.py`, prompt v1 held
+fixed) through each new deterministic rule separates cosmetic divergence from real
+disagreement:
+
+| stage | cross-model | heading Jaccard |
+|---|---|---|
+| legacy (fuzzy resolution, no pruning, model's block order) | 0.09 | 0.23 |
+| exact-only resolution | 0.09 | 0.24 |
+| + subsumption pruning | 0.09 | 0.24 |
+| + canonical ordering (**the new deterministic layer in full**) | 0.09 | 0.24 |
+
+The layer does what it claims — `Hippocampus + CA1 + CA3 + Dentate Gyrus +
+Entorhinal Cortex` collapses to `Entorhinal Cortex + Hippocampus`, `Mice`/`Rats`
+collapse into `Rodentia`, blocks come out in a fixed order — **and it moves
+cross-model agreement not at all.** The divergence was never formatting: with a
+free-form prompt the models pick genuinely different heading *sets* (claude
+`Disease Models, Animal + Mice, Transgenic + Rodentia`, gemini `Models, Animal +
+Rodentia`, gpt `Animals, Laboratory + Rodentia`) and different numbers of facets
+(1 to 7 blocks for one question). Canonicalisation is **necessary but not
+sufficient**: it is what lets two *agreeing* selections come out byte-identical.
+
+So the fix has to shrink what the model is allowed to choose. Hence three
+strategies, selectable per search (`mode` on `/api/map`):
+
+```mermaid
+flowchart TD
+    Q(["research question"]) --> M{"strategy"}
+
+    M -->|"llm"| L1{{"🤖 model proposes<br/>blocks + headings freely<br/>(prompts.PROPOSE_V2)"}}
+    M -->|"hybrid"| S1["candidates.candidate_slate()<br/>MeSH lookup over the question:<br/>maximal spans · compound parts ·<br/>phrase matches · broader terms"]
+    M -->|"mesh_only"| S2["candidates.mesh_only_blocks()<br/>one block per maximal match"]
+
+    S1 --> L2{{"🤖 model SELECTS<br/>candidate ids only<br/>(prompts.SELECT_HYBRID)"}}
+    L1 --> C["canonical.canonicalize_blocks()"]
+    L2 --> C
+    S2 --> C
+    C --> F["pipeline.finalize()<br/>strict: free-text from the index"]
+    F --> QB["query_builder → query + sha256"]
+
+    classDef nondet fill:#ffe0e0,stroke:#c0392b,stroke-width:2px,color:#111;
+    classDef det fill:#e0f2e9,stroke:#1e8449,stroke-width:1.5px,color:#111;
+    class L1,L2 nondet;
+    class S1,S2,C,F,QB det;
+```
+
+- **`llm`** — the original design with prompt **v2**. Every rule in
+  `prompts.PROPOSE_V2` traces to an observed failure: a 2–4 block budget and an
+  explicit ban-list (study design, statistics, "Computational Biology", a parent
+  category of another block) against invented facets; "give the BROADEST heading
+  and never its narrower ones" against redundant sets; "if you are unsure of the
+  exact string, put it in free-text" against hallucinated headings that used to be
+  fuzzy-matched into something wrong; a worked example, because a shared example
+  is the cheapest way to make two models answer alike.
+- **`hybrid`** — the deterministic index proposes, the model only *picks*. The
+  slate is a pure function of (question, MeSH index), the model returns ids, and
+  an id outside the slate is discarded. A heading the question does not lexically
+  reach **cannot enter the query**, so hallucination is structurally impossible and
+  the model's whole output space is enumerable. This is the mode to use when
+  cross-lab portability matters.
+- **`mesh_only`** — no LLM: every maximal MeSH match becomes a block.
+  Model-independent by construction (agreement 1.00), and the fallback whenever the
+  hybrid selection call fails or comes back empty. It has no judgement: it cannot
+  drop an irrelevant lexical match or add a facet the question only implies.
+
+### What the slate does that plain lookup does not
+
+`candidates.py` is the part that decides whether the closed set is any good:
+
+| pass | example | why |
+|---|---|---|
+| maximal spans, longest-match-first | "memory consolidation" → `Memory Consolidation` (not `Memory` + something) | the question's own words, exact |
+| singular/plural + hyphen variants | "rodent" → `Rodentia`, "Alzheimer's disease" → `Alzheimer Disease` | MeSH stores one surface form |
+| compound splitting (digit/capital only) | `CRISPR-Cas9` → `CRISPR` | technical compounds are never verbatim MeSH |
+| phrase pass: 3-char LIKE prefilter, then per-word prefix/abbreviation check | "single-cell RNA sequencing" → `Single-Cell Gene Expression Analysis` (via the entry term "Single-Cell RNA-Seq") | the same idea worded differently; the verification step is what keeps `optically ≠ optogenetic` and drops "Hip Prosthesis Implantation" for "hippocampus improve" |
+| immediate broader terms | `Hippocampus` → `Limbic System` | gives the model a way to widen a facet without writing vocabulary |
+| stop/generic word list | "methods", "detection", "effects" never become blocks | several are real headings (`Models, Theoretical` has the entry term "model"), and ANDing one throttles recall to near zero |
+
+Unmatched content words are handed to the model as "UNMATCHED PHRASES" and may
+only become **free-text** — that is how `off-target`, `scRNA-seq` and other jargon
+MeSH lacks still reach the query.
+
+### Reading the reproducibility numbers honestly
+
+- Within-model determinism must be measured with the map cache **off**
+  (`eval/determinism_eval.py` defaults to off). With `--cache` the answer is 1.00
+  by definition and says nothing about the model.
+- Cross-model agreement < 1.0 is not a bug per se — two specialists also disagree.
+  The question is how much of the disagreement is *ours*. The ablation above says:
+  with a free prompt, almost none of it.
+- Byte agreement is the strict view. `heading Jaccard` (semantic overlap of chosen
+  headings) and, with `--retrieval`, `pmid_jaccard` (overlap of what PubMed
+  actually returns) are the views a reviewer should care about: two different
+  strings can retrieve the same corpus.
+- Therefore `protocol.json` records **question + model + mode + strict**, not just
+  the query hash.
 
 ## Legend
 

@@ -1,0 +1,230 @@
+{
+  "models": [
+    "anthropic/claude-opus-4.8",
+    "deepseek/deepseek-v3.2",
+    "google/gemini-3.5-flash",
+    "google/gemma-3-4b-it",
+    "meta-llama/llama-3.1-8b-instruct",
+    "microsoft/phi-4",
+    "mistralai/ministral-3b-2512",
+    "mistralai/ministral-8b-2512",
+    "ollama/llama3.2:1b",
+    "ollama/qwen2.5:1.5b",
+    "openai/gpt-5.4-mini"
+  ],
+  "questions": [
+    "Does optogenetic stimulation of the hippocampus improve memory consolidation in rodent models?",
+    "single-cell RNA sequencing of microglia in Alzheimer's disease",
+    "CRISPR-Cas9 off-target effects detection methods"
+  ],
+  "stages": {
+    "legacy (fuzzy, no prune, LLM order)": {
+      "cross_model_mean": 0.0909,
+      "heading_jaccard_mean": 0.2335,
+      "per_question": [
+        {
+          "n_models": 11,
+          "distinct_queries": 11,
+          "agreement": 0.0909,
+          "heading_jaccard": 0.2584,
+          "block_counts": {
+            "1": 1,
+            "2": 1,
+            "3": 1,
+            "4": 8
+          },
+          "median_terms": 196,
+          "median_chars": 7525,
+          "question": "Does optogenetic stimulation of the hippocampus improve memory consolidation in rodent models?"
+        },
+        {
+          "n_models": 11,
+          "distinct_queries": 11,
+          "agreement": 0.0909,
+          "heading_jaccard": 0.284,
+          "block_counts": {
+            "1": 1,
+            "2": 1,
+            "3": 5,
+            "4": 3,
+            "7": 1
+          },
+          "median_terms": 188,
+          "median_chars": 8544,
+          "question": "single-cell RNA sequencing of microglia in Alzheimer's disease"
+        },
+        {
+          "n_models": 11,
+          "distinct_queries": 11,
+          "agreement": 0.0909,
+          "heading_jaccard": 0.158,
+          "block_counts": {
+            "2": 1,
+            "3": 5,
+            "4": 3,
+            "5": 2
+          },
+          "median_terms": 150,
+          "median_chars": 6313,
+          "question": "CRISPR-Cas9 off-target effects detection methods"
+        }
+      ]
+    },
+    "exact-only resolution": {
+      "cross_model_mean": 0.0909,
+      "heading_jaccard_mean": 0.2391,
+      "per_question": [
+        {
+          "n_models": 11,
+          "distinct_queries": 11,
+          "agreement": 0.0909,
+          "heading_jaccard": 0.2718,
+          "block_counts": {
+            "1": 1,
+            "2": 1,
+            "3": 1,
+            "4": 8
+          },
+          "median_terms": 196,
+          "median_chars": 7525,
+          "question": "Does optogenetic stimulation of the hippocampus improve memory consolidation in rodent models?"
+        },
+        {
+          "n_models": 11,
+          "distinct_queries": 11,
+          "agreement": 0.0909,
+          "heading_jaccard": 0.2876,
+          "block_counts": {
+            "1": 1,
+            "2": 1,
+            "3": 5,
+            "4": 3,
+            "7": 1
+          },
+          "median_terms": 188,
+          "median_chars": 8544,
+          "question": "single-cell RNA sequencing of microglia in Alzheimer's disease"
+        },
+        {
+          "n_models": 11,
+          "distinct_queries": 11,
+          "agreement": 0.0909,
+          "heading_jaccard": 0.158,
+          "block_counts": {
+            "2": 1,
+            "3": 5,
+            "4": 3,
+            "5": 2
+          },
+          "median_terms": 150,
+          "median_chars": 6313,
+          "question": "CRISPR-Cas9 off-target effects detection methods"
+        }
+      ]
+    },
+    "+ subsumption pruning": {
+      "cross_model_mean": 0.0909,
+      "heading_jaccard_mean": 0.2382,
+      "per_question": [
+        {
+          "n_models": 11,
+          "distinct_queries": 11,
+          "agreement": 0.0909,
+          "heading_jaccard": 0.2823,
+          "block_counts": {
+            "1": 1,
+            "2": 1,
+            "3": 1,
+            "4": 8
+          },
+          "median_terms": 192,
+          "median_chars": 7492,
+          "question": "Does optogenetic stimulation of the hippocampus improve memory consolidation in rodent models?"
+        },
+        {
+          "n_models": 11,
+          "distinct_queries": 11,
+          "agreement": 0.0909,
+          "heading_jaccard": 0.2829,
+          "block_counts": {
+            "1": 1,
+            "2": 1,
+            "3": 5,
+            "4": 3,
+            "7": 1
+          },
+          "median_terms": 188,
+          "median_chars": 8489,
+          "question": "single-cell RNA sequencing of microglia in Alzheimer's disease"
+        },
+        {
+          "n_models": 11,
+          "distinct_queries": 11,
+          "agreement": 0.0909,
+          "heading_jaccard": 0.1494,
+          "block_counts": {
+            "2": 1,
+            "3": 5,
+            "4": 3,
+            "5": 2
+          },
+          "median_terms": 150,
+          "median_chars": 6313,
+          "question": "CRISPR-Cas9 off-target effects detection methods"
+        }
+      ]
+    },
+    "+ canonical ordering (new layer)": {
+      "cross_model_mean": 0.0909,
+      "heading_jaccard_mean": 0.2382,
+      "per_question": [
+        {
+          "n_models": 11,
+          "distinct_queries": 11,
+          "agreement": 0.0909,
+          "heading_jaccard": 0.2823,
+          "block_counts": {
+            "1": 1,
+            "2": 1,
+            "3": 1,
+            "4": 8
+          },
+          "median_terms": 192,
+          "median_chars": 7492,
+          "question": "Does optogenetic stimulation of the hippocampus improve memory consolidation in rodent models?"
+        },
+        {
+          "n_models": 11,
+          "distinct_queries": 11,
+          "agreement": 0.0909,
+          "heading_jaccard": 0.2829,
+          "block_counts": {
+            "1": 1,
+            "2": 1,
+            "3": 5,
+            "4": 3,
+            "7": 1
+          },
+          "median_terms": 188,
+          "median_chars": 8489,
+          "question": "single-cell RNA sequencing of microglia in Alzheimer's disease"
+        },
+        {
+          "n_models": 11,
+          "distinct_queries": 11,
+          "agreement": 0.0909,
+          "heading_jaccard": 0.1494,
+          "block_counts": {
+            "2": 1,
+            "3": 5,
+            "4": 3,
+            "5": 2
+          },
+          "median_terms": 150,
+          "median_chars": 6313,
+          "question": "CRISPR-Cas9 off-target effects detection methods"
+        }
+      ]
+    }
+  }
+}

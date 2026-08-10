@@ -60,11 +60,11 @@ $("mapBtn").onclick = async () => {
   try {
     const k = keys();
     const res = await api("/api/map", {
-      question: q, domains: selectedDomains(),
+      question: q, domains: selectedDomains(), mode: $("mode").value,
       model: k.model, extra_context: $("extra").value.trim(), api_key: k.or,
     });
     state.concepts = res.concepts.map(normalizeConcept);
-    $("mapNotes").textContent = res.notes ? "Notes: " + res.notes : "";
+    $("mapNotes").innerHTML = mapNotes(res);
     renderConcepts();
     $("conceptSection").classList.remove("hidden");
     $("filterSection").classList.remove("hidden");
@@ -77,9 +77,26 @@ $("mapBtn").onclick = async () => {
   }
 };
 
+// What the deterministic layer did to the model's proposal — the audit trail the
+// reviewer needs before locking the protocol.
+function mapNotes(res) {
+  const bits = [];
+  if (res.notes) bits.push(`<b>Notes:</b> ${esc(res.notes)}`);
+  bits.push(`<b>Strategy:</b> ${esc(res.mode)}${res.mode === "llm" ? " (prompt " + esc(res.prompt_version) + ")" : ""}`);
+  if (res.slate && res.slate.length) bits.push(`<b>Candidate slate:</b> ${res.slate.length} MeSH descriptors found in the question`);
+  if (res.unmatched && res.unmatched.length) bits.push(`<b>Not in MeSH:</b> ${esc(res.unmatched.join(", "))}`);
+  if (res.dropped && res.dropped.length) {
+    const d = res.dropped.map((x) => `“${esc(x.candidate)}” (${esc(x.reason)})`).join(", ");
+    bits.push(`<b>Dropped:</b> ${d}`);
+  }
+  if (res.invalid_ids && res.invalid_ids.length) bits.push(`<b>Ignored invalid candidate ids:</b> ${res.invalid_ids.join(", ")}`);
+  return bits.join("<br>");
+}
+
 function normalizeConcept(c) {
   return {
     name: c.name || "Concept",
+    slot: c.slot || "other",
     rationale: c.rationale || "",
     explode: true,
     mesh: (c.mesh || []).map((m) => ({ ...m, include: !!m.matched })),
@@ -227,7 +244,7 @@ function collectConcepts() {
         const op = m.options.find((o) => o.dui === m.selected_dui) || m.options[0];
         return op.label;
       });
-    return { name: c.name, explode: c.explode, mesh, freetext: c.freetext };
+    return { name: c.name, slot: c.slot || "other", explode: c.explode, mesh, freetext: c.freetext };
   }).filter((c) => c.mesh.length || c.freetext.length);
 }
 
@@ -251,7 +268,7 @@ $("compileBtn").onclick = async () => {
     const concepts = collectConcepts();
     if (!concepts.length) return setMsg("searchMsg", "No concepts with terms to search.", true);
     const strict = $("strictMode").checked;
-    compiled = await api("/api/compile", { concepts, filters: collectFilters(), strict });
+    compiled = await api("/api/compile", { concepts, filters: collectFilters(), strict, canonical: true });
     $("queryBox").textContent = compiled.query;
     $("queryBox").classList.remove("hidden");
     const mode = strict
@@ -287,7 +304,10 @@ $("searchBtn").onclick = async () => {
       query: compiled.query, max_records: max, api_key: k.ncbi, email: k.email,
       protocol: {
         question: $("question").value.trim(),
-        model: keys().model, domains: selectedDomains(),
+        // the protocol must name the model AND the strategy: reproducibility is
+        // per-(model, strategy), never universal (see docs/architecture.md)
+        model: keys().model, mode: $("mode").value, domains: selectedDomains(),
+        strict: $("strictMode").checked,
         concepts: collectConcepts(), filters: collectFilters(),
       },
     });

@@ -24,10 +24,10 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import query_builder
+from . import canonical, pipeline, query_builder
 from .domain_vocab import get_vocab
 from .mesh_index import get_index
-from .openrouter_client import OpenRouterError, map_question, map_question_async
+from .openrouter_client import DEFAULT_PROMPT_VERSION, OpenRouterError
 from .pubmed import PubMed, to_csv, to_jsonl
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -46,6 +46,8 @@ class MapReq(BaseModel):
     model: str | None = None
     extra_context: str = ""
     api_key: str | None = None
+    mode: str = "hybrid"                 # llm | hybrid | mesh_only
+    prompt_version: str | None = None    # llm mode only: v1 | v2
 
 
 class ExpandReq(BaseModel):
@@ -57,6 +59,7 @@ class CompileReq(BaseModel):
     concepts: list[dict]
     filters: dict = {}
     strict: bool = False
+    canonical: bool = True               # prune subsumed headings, sort blocks
 
 
 class CountReq(BaseModel):
@@ -75,43 +78,20 @@ class SearchReq(BaseModel):
 
 # ---------------------------------------------------------------- helpers
 
-def _resolve_mesh(candidate: str) -> dict:
-    ix = get_index()
-    exact = ix.exact(candidate)
-    if exact:
-        return {
-            "query": candidate,
-            "matched": True,
-            "options": [d.to_dict() for d in exact],
-            "selected_dui": exact[0].dui,
-        }
-    options = ix.search(candidate, limit=8)
-    return {
-        "query": candidate,
-        "matched": False,
-        "options": [d.to_dict() for d in options],
-        "selected_dui": options[0].dui if options else "",
-    }
-
-
-def _strict_concepts(concepts: list[dict]) -> list[dict]:
+def _prepare_concepts(concepts: list[dict], *, strict: bool, canonical_form: bool) -> list[dict]:
     """
-    Deterministic term derivation for compile: for each concept that has MeSH
-    headings, replace its free-text with the exploded entry terms of those
-    headings (a pure function of the local index — no LLM prose). Concepts with
-    no MeSH heading keep their free-text, so current-jargon terms that aren't in
-    MeSH still survive.
+    Deterministic preparation of (possibly human-edited) concepts for compiling.
+
+    canonical_form: resolve headings exactly, drop headings that another heading
+    in the same block already explodes over, sort everything (canonical.py).
+    strict: derive each free-text list from the MeSH index instead of the model's
+    prose, so the query is a pure function of the selected headings.
     """
     ix = get_index()
-    out = []
-    for c in concepts:
-        headings = list(c.get("mesh", []))
-        if headings:
-            explode = bool(c.get("explode", True))
-            duis = [d.dui for h in headings for d in ix.exact(h)]
-            c = {**c, "freetext": ix.strict_terms(duis, explode=explode)}
-        out.append(c)
-    return out
+    blocks = list(concepts)
+    if canonical_form:
+        blocks = canonical.canonicalize_blocks(blocks, ix, prune=True)["blocks"]
+    return pipeline.finalize(blocks, strict=strict, ix=ix)
 
 
 def _pubmed(api_key: str | None, email: str | None) -> PubMed:
@@ -131,6 +111,9 @@ def config():
         "ncbi_email": os.environ.get("NCBI_EMAIL", ""),
         "default_model": os.environ.get("OPENROUTER_MODEL", "anthropic/claude-3.5-sonnet"),
         "domains": get_vocab().domains(),
+        "modes": list(pipeline.MODES),
+        "default_mode": "hybrid",
+        "prompt_version": DEFAULT_PROMPT_VERSION,
     }
 
 
@@ -140,38 +123,36 @@ def vocab(domains: str = ""):
     return {"clusters": [c.to_dict() for c in get_vocab().clusters(d)]}
 
 
-def resolve_concepts(result: dict, domains: list[str]) -> dict:
+def _ui_concepts(build: dict) -> list[dict]:
     """
-    Deterministic post-LLM step: resolve each proposed MeSH heading against the
-    local index and augment free-text with matching domain-vocab synonyms.
-    Shared by the async endpoint and the (sync) determinism test.
+    Canonical blocks -> the review shape the frontend renders.
+
+    Every heading here is already resolved exactly (canonical.py), so each one
+    carries its single descriptor and is pre-checked. Headings the model proposed
+    that did NOT resolve are reported separately under "dropped" instead of being
+    fuzzy-matched into something else.
     """
-    vocab_obj = get_vocab()
-    concepts_out = []
-    for c in result["concepts"]:
-        mesh = [_resolve_mesh(m) for m in c["mesh_candidates"]]
-        # augment free-text with matching domain-vocab synonyms
-        domain_syn: list[str] = []
-        haystack = " ".join([c["name"]] + c["freetext"]).lower()
-        for cl in vocab_obj.clusters(domains or None):
-            if cl.concept.lower() in haystack or any(
-                s.lower() in haystack for s in cl.synonyms
-            ):
-                domain_syn.extend(cl.synonyms)
-        # dedupe freetext (LLM + domain), preserve order
-        seen, freetext = set(), []
-        for t in c["freetext"] + domain_syn:
-            k = t.lower()
-            if k not in seen:
-                seen.add(k)
-                freetext.append(t)
-        concepts_out.append({
-            "name": c["name"],
-            "rationale": c["rationale"],
+    ix = get_index()
+    out = []
+    for b, final in zip(build["blocks"], build["concepts"]):
+        mesh = []
+        for dui in b.get("duis", []):
+            d = ix.get(dui)
+            if d is None:
+                continue
+            mesh.append({"query": canonical.preferred_label(ix, dui), "matched": True,
+                         "options": [d.to_dict()], "selected_dui": dui})
+        out.append({
+            "name": b.get("name", ""),
+            "slot": b.get("slot", "other"),
+            "rationale": b.get("rationale", ""),
             "mesh": mesh,
-            "freetext": freetext,
+            # show the model's own terms for review; strict mode replaces them
+            # with index-derived synonyms at compile time
+            "freetext": b.get("freetext", []) + b.get("vocab_freetext", []),
+            "strict_terms": len(final.get("freetext", [])),
         })
-    return {"concepts": concepts_out, "notes": result["notes"], "model": result["model"]}
+    return out
 
 
 @app.post("/api/map")
@@ -179,13 +160,26 @@ async def api_map(req: MapReq):
     if not req.question.strip():
         raise HTTPException(400, "question is required")
     try:
-        result = await map_question_async(
-            req.question, domains=req.domains, model=req.model,
+        build = await pipeline.build_async(
+            req.question, domains=req.domains, mode=req.mode, model=req.model,
             api_key=req.api_key, extra_context=req.extra_context,
+            prompt_version=req.prompt_version,
         )
     except OpenRouterError as e:
         raise HTTPException(502, str(e))
-    return resolve_concepts(result, req.domains)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {
+        "concepts": _ui_concepts(build),
+        "notes": build["notes"],
+        "model": build["model"],
+        "mode": build["mode"],
+        "prompt_version": build["prompt_version"],
+        "dropped": build["dropped"],
+        "invalid_ids": build["invalid_ids"],
+        "slate": build["slate"].get("candidates", []),
+        "unmatched": build["slate"].get("unmatched", []),
+    }
 
 
 @app.post("/api/expand")
@@ -198,11 +192,12 @@ def api_expand(req: ExpandReq):
 
 @app.post("/api/compile")
 def api_compile(req: CompileReq):
-    concepts = _strict_concepts(req.concepts) if req.strict else req.concepts
+    concepts = _prepare_concepts(req.concepts, strict=req.strict, canonical_form=req.canonical)
     try:
-        return query_builder.compile_search(concepts, req.filters)
+        res = query_builder.compile_search(concepts, req.filters)
     except ValueError as e:
         raise HTTPException(400, str(e))
+    return {**res, "concepts": concepts}
 
 
 @app.post("/api/count")

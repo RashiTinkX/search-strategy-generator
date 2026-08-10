@@ -79,6 +79,23 @@ class MeshIndex:
         rows = self._con.execute("SELECT tree FROM tree WHERE dui = ? ORDER BY tree", (dui,))
         return [r["tree"] for r in rows]
 
+    def trees(self, dui: str) -> list[str]:
+        """Public tree numbers for a descriptor (sorted). Used for subsumption."""
+        return self._trees_for(dui)
+
+    def parents(self, dui: str) -> list[str]:
+        """Immediate broader descriptors: one MeSH tree level up. Sorted."""
+        out: set[str] = set()
+        for tn in self.trees(dui):
+            if "." not in tn:
+                continue
+            rows = self._con.execute(
+                "SELECT DISTINCT dui FROM tree WHERE tree = ?", (tn.rsplit(".", 1)[0],)
+            ).fetchall()
+            out.update(r["dui"] for r in rows)
+        out.discard(dui)
+        return sorted(out)
+
     def get(self, dui: str) -> Descriptor | None:
         row = self._con.execute(
             "SELECT dui, label FROM descriptor WHERE dui = ?", (dui,)
@@ -102,6 +119,16 @@ class MeshIndex:
             (_norm(term),),
         ).fetchall()
         return [d for d in (self.get(r["dui"]) for r in rows) if d]
+
+    def like_terms(self, sql: str, params) -> list[tuple[str, str]]:
+        """
+        Run a caller-built LIKE query over entry_term, returning (dui, term).
+
+        Used by candidates.phrase_candidates, which needs an AND of several LIKE
+        patterns (one per word) — not expressible through the fixed lookups above.
+        Read-only connection, parameterized values.
+        """
+        return [(r[0], r[1]) for r in self._con.execute(sql, params).fetchall()]
 
     def search(self, text: str, limit: int = 25) -> list[Descriptor]:
         """

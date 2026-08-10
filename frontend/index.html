@@ -44,6 +44,15 @@
       <div id="domains" class="chips"></div>
     </div>
     <textarea id="extra" rows="2" placeholder="Optional scope notes (populations, timeframe, study designs to emphasize)..."></textarea>
+    <div class="row">
+      <label class="inline">Strategy
+        <select id="mode" style="width:auto">
+          <option value="hybrid">Hybrid — MeSH lookup proposes, model selects (most reproducible with an LLM)</option>
+          <option value="llm">LLM — model proposes freely (widest coverage, least agreement across models)</option>
+          <option value="mesh_only">MeSH only — no LLM (fully model-independent)</option>
+        </select>
+      </label>
+    </div>
     <button id="mapBtn" class="primary">Map to MeSH &amp; synonyms &rarr;</button>
     <span id="mapMsg" class="msg"></span>
   </section>

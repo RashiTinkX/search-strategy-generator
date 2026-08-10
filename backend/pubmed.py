@@ -115,6 +115,27 @@ class PubMed:
             "errors": data.get("errorlist", {}),
         }
 
+    def pmids(self, query: str, retmax: int = 10000, batch: int = 10000) -> list[str]:
+        """
+        Just the PMID list for a query, sorted ascending.
+
+        Used by the determinism evaluation to compare what two queries actually
+        retrieve (the metric a reviewer cares about) without fetching records.
+        """
+        out: list[str] = []
+        start = 0
+        while start < retmax:
+            n = min(batch, retmax - start)
+            params = self._params(db="pubmed", term=query, retmode="json",
+                                  retstart=start, retmax=n)
+            r = self._request("esearch.fcgi", params, method="POST")
+            ids = r.json()["esearchresult"].get("idlist", [])
+            out.extend(ids)
+            if len(ids) < n:
+                break
+            start += n
+        return sorted(set(out), key=lambda p: int(p) if p.isdigit() else 0)
+
     # ---- fetch --------------------------------------------------------
 
     def fetch_all(self, webenv: str, query_key: str, count: int,

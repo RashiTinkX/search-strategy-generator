@@ -65,10 +65,13 @@ def _localname(uri: str) -> str:
 
 
 def _parse_line(line: str):
-    """Return (subject_local, pred_local, object_value, object_is_uri) or None.
+    """Return (subject_local, pred_local, object_value, object_is_uri, lang) or None.
 
     N-Triples line form:  <s> <p> <o> .   or   <s> <p> "lit"@en .
-    Subject and predicate are always URIs.
+    Subject and predicate are always URIs. `lang` is the literal's language tag
+    ("" when absent, and always "" for URI objects) — it matters because the dump
+    carries a few non-English rdfs:labels, and a non-English heading in the query
+    is a tag PubMed can never match.
     """
     if not line or line[0] != "<":
         return None
@@ -95,16 +98,18 @@ def _parse_line(line: str):
         return None
     if o[0] == "<":
         obj = o[1 : o.rfind(">")]
-        return _localname(subj), pred_l, _localname(obj), True
+        return _localname(subj), pred_l, _localname(obj), True, ""
     if o[0] == '"':
         end = o.rfind('"')
         if end <= 0:
             return None
         val = o[1:end]
+        tail = o[end + 1 :]
+        lang = tail[1:].split("-", 1)[0].lower() if tail.startswith("@") else ""
         # unescape the few things N-Triples escapes
         if "\\" in val:
             val = val.replace('\\"', '"').replace("\\\\", "\\").replace("\\n", "\n").replace("\\t", "\t")
-        return _localname(subj), pred_l, val, False
+        return _localname(subj), pred_l, val, False, lang
     return None
 
 
@@ -119,6 +124,7 @@ def build(nt_path: str, db_path: str) -> None:
     desc_concepts: dict[str, list[str]] = {}
     concept_terms: dict[str, list[str]] = {}
     term_labels: dict[str, list[str]] = {}
+    skipped_labels: list[tuple[str, str, str]] = []
 
     n = 0
     with open(nt_path, "r", encoding="utf-8", errors="replace") as fh:
@@ -129,11 +135,18 @@ def build(nt_path: str, db_path: str) -> None:
             parsed = _parse_line(line)
             if parsed is None:
                 continue
-            subj, pred, obj, is_uri = parsed
+            subj, pred, obj, is_uri, lang = parsed
             c0 = subj[0]
             if c0 == "D":  # topical/other descriptor
                 if pred == P_LABEL and not is_uri:
-                    desc_label[subj] = obj
+                    # English (or untagged) only: the dump has a stray "@nl" label
+                    # (D002493 "Ziekte, centraalzenuwstelsel-") which, being
+                    # last-write-wins, replaced "Central Nervous System Diseases"
+                    # and produced a MeSH tag PubMed cannot match.
+                    if lang in ("", "en"):
+                        desc_label[subj] = obj
+                    else:
+                        skipped_labels.append((subj, lang, obj))
                 elif pred == P_TREE and is_uri:
                     desc_trees.setdefault(subj, []).append(obj)
                 elif pred in (P_CONCEPT, P_PREF_CONCEPT) and is_uri:
@@ -151,10 +164,15 @@ def build(nt_path: str, db_path: str) -> None:
         f"({time.time() - t0:.0f}s)",
         flush=True,
     )
+    for dui, lang, val in skipped_labels:
+        print(f"  skipped non-English label: {dui} @{lang} {val!r}", flush=True)
 
-    if os.path.exists(db_path):
-        os.remove(db_path)
-    con = sqlite3.connect(db_path)
+    # Build into a temp file and swap: an interrupted in-place rebuild once left a
+    # 0-byte mesh.sqlite behind, which run.sh's existence check will not repair.
+    tmp_path = db_path + ".building"
+    if os.path.exists(tmp_path):
+        os.remove(tmp_path)
+    con = sqlite3.connect(tmp_path)
     con.executescript(
         """
         PRAGMA journal_mode = OFF;
@@ -201,6 +219,7 @@ def build(nt_path: str, db_path: str) -> None:
     con.execute("VACUUM")
     con.commit()
     con.close()
+    os.replace(tmp_path, db_path)
     print(
         f"  wrote {len(desc_rows):,} descriptors, {len(tree_rows):,} tree links, "
         f"{len(et_rows):,} entry terms -> {db_path} ({time.time() - t0:.0f}s total)",
