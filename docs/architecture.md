@@ -3,8 +3,17 @@
 How an exhaustive, **reproducible** literature search is built. The core idea:
 the LLM is the *only* non-deterministic component and it merely **proposes**
 structure — every proposal is resolved against a local, deterministic MeSH index
-before it can affect the query. So the same question always compiles to the same
-byte-identical PubMed query (and hash).
+before it can affect the query. Given the same *selection*, the compiled PubMed
+query is byte-identical, and we hash it.
+
+How far that carries to "the same question always gives the same query" is a
+measured quantity, not an assumption — see
+**[Cross-model determinism](#cross-model-determinism-three-strategies-2026-08-10)**
+for the numbers per strategy. Short version: without an LLM (`mesh_only`) it is
+1.00; with one it is 0.71–0.75 within a model and 0.24–0.43 across models, so a
+protocol has to record the model and the strategy.
+
+![Determinism results](../data/determinism_v2.png)
 
 ```mermaid
 flowchart TD
@@ -114,13 +123,18 @@ flowchart LR
 **How far this holds — and where it breaks.** The deterministic layer does real
 work: a hallucinated MeSH heading resolves to *nothing* and drops out; terms are
 lower-cased, de-duped, sorted; block/clause order is fixed. But we *measured* it
-(`test.py`, 10 models × 10 runs) and the naive pipeline is **not** reproducible:
-`query_hash` determinism was ≈ **0.10** for most models (all 10 runs → 10
-different queries). At `temperature=0` the LLM still emits a **different set of
-free-text synonyms — and even a different set of MeSH headings — each run**, and
-those flow straight into the query. The deterministic layer can't absorb a
-changing *input set*. See **[Reproducibility in practice](#reproducibility-in-practice-measured--fixed)**
-for the numbers and the three mechanisms that actually get it to 1.00.
+(`eval/determinism_eval.py`) and the naive pipeline is **not** reproducible:
+`query_hash` determinism was ≈ **0.10** for most models in the first run (all 10
+runs → 10 different queries). At `temperature=0` the LLM still emits a **different
+set of free-text synonyms — and even a different set of MeSH headings — each
+run**, and those flow straight into the query. The deterministic layer can't
+absorb a changing *input set*.
+
+Two sections follow, in the order the work happened:
+**[Reproducibility in practice](#reproducibility-in-practice-measured--fixed)** —
+the three mechanisms that fix the *within-model* case; and
+**[Cross-model determinism](#cross-model-determinism-three-strategies-2026-08-10)**
+— why those three are not enough across models, and the strategies that help.
 
 ## How MeSH is used
 
@@ -556,7 +570,7 @@ deterministic layer supplies exhaustive, reproducible synonyms.
 
 ## Cross-model determinism: three strategies (2026-08-10)
 
-The first evaluation measured two different things and only one of them was good:
+The first evaluation (`data/baseline_2026-07-15/`) measured two different things and only one of them was good:
 
 | | what it means | baseline result |
 |---|---|---|

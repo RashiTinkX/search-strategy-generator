@@ -6,7 +6,7 @@ Design constraint: the LLM's output is not the product — a deterministic progr
 to shrink the model's decision space to the smallest set of choices that still
 needs judgement, and to make those choices the SAME ones a different model would
 make. Every rule below traces to a concrete divergence seen in the 11-model
-evaluation (data/determinism.json):
+evaluation (data/baseline_2026-07-15/determinism.json):
 
   * models emitted 1-7 blocks for the same question   -> hard block budget, and
     an explicit ban on the block types that were invented (study design,

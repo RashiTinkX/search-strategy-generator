@@ -1,6 +1,11 @@
 # Evaluation harness
 
-Two scripts. Both load `../.env` themselves, so no `run.sh` needed.
+Four scripts. They load `../.env` themselves, so no `run.sh` needed.
+
+Current outputs live in `../data/`: `determinism_v2.json` (+ `_span`),
+`determinism_v2.png` / `_dark.png`, `determinism_v2.md` (table view), and
+`replay_ablation.json`. The superseded July run is in
+`../data/baseline_2026-07-15/` — see its README before quoting those numbers.
 
 ## `determinism_eval.py` — live measurement
 
@@ -66,3 +71,25 @@ result and what it implies.
 Note: the cache filenames are hashes produced by the original harness (`test.py`,
 since lost), so the question is recovered from each proposal's own vocabulary
 (`QUESTION_KEYS`). Add an entry there if you replay a different question set.
+
+## `plot_report.py` — figure + table view
+
+```bash
+.venv/bin/python eval/plot_report.py     # -> data/determinism_v2{,_dark}.png + .md
+```
+
+Reads both JSON reports and renders one panel per metric (light and dark, each
+stepped for its own surface). Re-run it after any `determinism_eval.py` run —
+`determinism_eval.py` writes JSON only, so the figure is never regenerated
+implicitly, which is exactly how the old July PNG came to look current for a month.
+
+## `selftest.py` — the deterministic rules, no network
+
+```bash
+.venv/bin/python eval/selftest.py        # 29 checks
+```
+
+Pins what cross-model agreement depends on: exact-only resolution, subsumption
+pruning, canonical ordering, span grouping, the slate's precision cases, and the
+MeSH index's English-label fix. Run it before committing a change to
+`canonical.py` or `candidates.py`.
