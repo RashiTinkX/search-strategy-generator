@@ -21,7 +21,7 @@ reach the query builder.
 from __future__ import annotations
 
 from . import canonical
-from .candidates import candidate_slate, mesh_only_blocks, span_groups
+from .candidates import candidate_slate, group_closure, mesh_only_blocks, span_groups
 from .domain_vocab import get_vocab
 from .mesh_index import get_index
 from .openrouter_client import (
@@ -57,7 +57,8 @@ def _blocks_from_concepts(concepts: list[dict]) -> list[dict]:
 
 
 def _blocks_from_selection(selection: dict, slate: dict, *,
-                           group_by_span: bool = True) -> tuple[list[dict], list[int]]:
+                           group_by_span: bool = True,
+                           closure: bool = True) -> tuple[list[dict], list[int]]:
     """
     Hybrid selection (candidate ids) -> canonicaliser input.
 
@@ -94,27 +95,62 @@ def _blocks_from_selection(selection: dict, slate: dict, *,
                     "mesh": [], "freetext": b.get("freetext", []), "explode": True,
                 })
             continue
+
         for i in sorted(ids):
             key = groups.get(i, i) if group_by_span else pos
             g = grouped.setdefault(key, {"name": b.get("name", ""), "slot": b.get("slot", ""),
-                                         "mesh": [], "freetext": [], "explode": True})
+                                         "mesh": [], "freetext": [], "explode": True,
+                                         "ids": []})
             g["mesh"].append(by_id[i]["label"])
+            g["ids"].append(i)
             for t in b.get("freetext", []):
                 if t not in g["freetext"]:
                     g["freetext"].append(t)
+
+    if group_by_span and closure:
+        # Replace the model's pick inside each facet with the facet's canonical
+        # vocabulary; the model still decides which facets exist.
+        canon = group_closure(slate, sorted(used))
+        for key, g in grouped.items():
+            if key in canon:
+                g["mesh"] = [m["label"] for m in canon[key]]
+        # A block with no MeSH id at all is the escape hatch for wording MeSH
+        # lacks ("off-target"). Keeping the model's own list there was the last
+        # prose channel into the query, and the widest: for one question the seven
+        # models wrote "off target", "off-targets", "off-target activity",
+        # "detection", "bioinformatics", "machine learning", "method*" — several of
+        # which are over-restrictive as an ANDed block. So the model's judgement is
+        # kept (does this question need a non-MeSH facet at all?) and the wording
+        # is taken from the question itself: the phrases the MeSH lookup could not
+        # resolve, as ONE block. Extend it by hand in review if the review needs
+        # more jargon than the question contains.
+        unmatched = canonical.sort_terms(slate.get("unmatched", []))
+        freetext_only = ([{"name": "question terms not in MeSH", "slot": "other",
+                           "mesh": [], "freetext": unmatched, "explode": True,
+                           "derived": True}]
+                         if (freetext_only and unmatched) else [])
     blocks = [grouped[k] for k in sorted(grouped, key=str)] + freetext_only
     return blocks, bad_ids
 
 
-def _vocab_terms(block: dict, domains: list[str] | None) -> list[str]:
+def _vocab_terms(block: dict, domains: list[str] | None, *,
+                 use_model_text: bool = False) -> list[str]:
     """
     Domain-vocabulary synonyms that apply to a block (deterministic, file-driven).
 
     Kept separate from the model's free-text so strict mode can drop the model's
     prose while keeping this — it is as reproducible as the MeSH index is.
+
+    use_model_text=False (strict mode) matches only against the block's MeSH
+    headings. Matching against the model's block NAME and free-text was a real
+    determinism leak: two models that selected identical headings still compiled
+    different queries (153 vs 145 terms) because their differing prose fired
+    different vocabulary clusters.
     """
-    hay = " ".join([block.get("name", "")] + list(block.get("mesh", []))
-                   + list(block.get("freetext", []))).lower()
+    parts = list(block.get("mesh", []))
+    if use_model_text:
+        parts += [block.get("name", "")] + list(block.get("freetext", []))
+    hay = " ".join(parts).lower()
     out: list[str] = []
     for cl in get_vocab().clusters(domains or None):
         if cl.concept.lower() in hay or any(s.lower() in hay for s in cl.synonyms):
@@ -161,7 +197,7 @@ def _assemble(blocks: list[dict], domains: list[str] | None, *, merge_slots: boo
               strict: bool, ix) -> dict:
     can = canonical.canonicalize_blocks(blocks, ix, prune=True, merge_slots=merge_slots)
     for b in can["blocks"]:
-        b["vocab_freetext"] = _vocab_terms(b, domains)
+        b["vocab_freetext"] = _vocab_terms(b, domains, use_model_text=not strict)
     return {
         "blocks": can["blocks"],
         "dropped": can["dropped"],
@@ -176,7 +212,8 @@ def build(question: str, *, domains: list[str] | None = None, mode: str = "llm",
           extra_context: str = "", seed: int | None = None,
           prompt_version: str | None = None, strict: bool = True,
           fallback: bool = True, merge_slots: bool = False,
-          group_by_span: bool = True) -> dict:
+          group_by_span: bool = True,
+          closure: bool = True) -> dict:
     """Synchronous build (evaluation harness / CLI)."""
     mode = _check_mode(mode)
     ix = get_index()
@@ -200,7 +237,8 @@ def build(question: str, *, domains: list[str] | None = None, mode: str = "llm",
             raw = select_candidates(question, slate, domains=domains, model=model,
                                     api_key=api_key, extra_context=extra_context, seed=seed)
             notes = raw.get("notes", "")
-            blocks, bad_ids = _blocks_from_selection(raw, slate, group_by_span=group_by_span)
+            blocks, bad_ids = _blocks_from_selection(
+                raw, slate, group_by_span=group_by_span, closure=closure)
         except OpenRouterError:
             if not fallback:
                 raise
@@ -228,7 +266,8 @@ async def build_async(question: str, *, domains: list[str] | None = None, mode: 
                       extra_context: str = "", seed: int | None = None,
                       prompt_version: str | None = None, strict: bool = True,
                       fallback: bool = True, merge_slots: bool = False,
-                      group_by_span: bool = True) -> dict:
+                      group_by_span: bool = True,
+                      closure: bool = True) -> dict:
     """Async build (FastAPI endpoint)."""
     mode = _check_mode(mode)
     ix = get_index()
@@ -253,7 +292,8 @@ async def build_async(question: str, *, domains: list[str] | None = None, mode: 
                                                 api_key=api_key, extra_context=extra_context,
                                                 seed=seed)
             notes = raw.get("notes", "")
-            blocks, bad_ids = _blocks_from_selection(raw, slate, group_by_span=group_by_span)
+            blocks, bad_ids = _blocks_from_selection(
+                raw, slate, group_by_span=group_by_span, closure=closure)
         except OpenRouterError:
             if not fallback:
                 raise

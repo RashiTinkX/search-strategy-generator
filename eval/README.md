@@ -2,9 +2,9 @@
 
 Four scripts. They load `../.env` themselves, so no `run.sh` needed.
 
-Current outputs live in `../data/`: `determinism_v2.json` (+ `_span`),
-`determinism_v2.png` / `_dark.png`, `determinism_v2.md` (table view), and
-`replay_ablation.json`. The superseded July run is in
+Current outputs live in `../data/`: `determinism_v3.json`, `determinism_v3.png` /
+`_dark.png`, `determinism_v3.md` (table view, with column definitions), the raw run
+logs in `logs/`, and `replay_ablation.json`. The superseded July run is in
 `../data/baseline_2026-07-15/` — see its README before quoting those numbers.
 
 ## `determinism_eval.py` — live measurement
@@ -35,13 +35,14 @@ question) and scores four things:
 Notable flags: `--no-strict` keeps the model's free-text instead of index-derived
 terms; `--cache` pins each build (see the caveat below); `--no-span-grouping` lets
 the *model* decide which candidates are ORed instead of grouping them by the
-question spans they came from; `--out` sets the JSON report path (default
-`data/determinism_v2.json`).
+question spans they came from; `--no-closure` lets the *model* pick the synonyms
+inside a facet instead of deriving them from the slate; `--out` sets the JSON report
+path (default `data/determinism_v3.json`).
 
-Every hybrid run also reports a **free ablation row**: the same selections
-re-grouped with the opposite policy (`hybrid (model-grouped)` when span grouping is
-on). It costs no extra LLM calls and isolates "who decides what is ORed" from
-"which vocabulary was picked".
+Every hybrid run also reports a **free ablation row** — the same selections rebuilt
+with the opposite closure policy (`hybrid (no closure)`). It costs no extra LLM calls
+and separates "which vocabulary did the model name" from "which facets did it
+choose", which is where models actually disagree.
 
 **Caching caveat.** `--cache` stores one build per (mode, model, question) and
 replays it, which makes within-model determinism **1.00 by construction**. The
@@ -75,10 +76,10 @@ since lost), so the question is recovered from each proposal's own vocabulary
 ## `plot_report.py` — figure + table view
 
 ```bash
-.venv/bin/python eval/plot_report.py     # -> data/determinism_v2{,_dark}.png + .md
+.venv/bin/python eval/plot_report.py     # -> data/determinism_v3{,_dark}.png + .md
 ```
 
-Reads both JSON reports and renders one panel per metric (light and dark, each
+Reads the JSON report and renders one panel per metric (light and dark, each
 stepped for its own surface). Re-run it after any `determinism_eval.py` run —
 `determinism_eval.py` writes JSON only, so the figure is never regenerated
 implicitly, which is exactly how the old July PNG came to look current for a month.
@@ -86,10 +87,10 @@ implicitly, which is exactly how the old July PNG came to look current for a mon
 ## `selftest.py` — the deterministic rules, no network
 
 ```bash
-.venv/bin/python eval/selftest.py        # 29 checks
+.venv/bin/python eval/selftest.py        # 31 checks
 ```
 
 Pins what cross-model agreement depends on: exact-only resolution, subsumption
-pruning, canonical ordering, span grouping, the slate's precision cases, and the
-MeSH index's English-label fix. Run it before committing a change to
+pruning, canonical ordering, span grouping, facet closure, "no model prose reaches a
+strict query", the slate's precision cases, and the MeSH index's English-label fix. Run it before committing a change to
 `canonical.py` or `candidates.py`.

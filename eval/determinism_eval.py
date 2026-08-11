@@ -94,12 +94,14 @@ def _cache_key(mode, model, prompt_version, question, domains) -> str:
 
 
 def one_run(mode: str, model: str, prompt_version: str, item: dict, *,
-            strict: bool, use_cache: bool, group_by_span: bool = True) -> dict:
+            strict: bool, use_cache: bool, group_by_span: bool = True,
+            closure: bool = True) -> dict:
     """Build + compile once. Returns the run record (never raises)."""
     question, domains = item["question"], item.get("domains", [])
     t0 = time.monotonic()
     key = _cache_key(mode, model, prompt_version, question, domains)
-    cache_file = CACHE_DIR / f"{key}{'' if group_by_span else '-nospan'}.json"
+    cache_file = CACHE_DIR / (key + ("" if group_by_span else "-nospan")
+                              + ("" if closure else "-noclosure") + ".json")
     try:
         if use_cache and cache_file.exists():
             build = json.loads(cache_file.read_text())
@@ -107,18 +109,21 @@ def one_run(mode: str, model: str, prompt_version: str, item: dict, *,
             build = pipeline.build(question, domains=domains, mode=mode,
                                    model=None if mode == "mesh_only" else model,
                                    prompt_version=prompt_version, strict=strict,
-                                   fallback=True, group_by_span=group_by_span)
+                                   fallback=True, group_by_span=group_by_span,
+                                   closure=closure)
             if use_cache:
                 CACHE_DIR.mkdir(parents=True, exist_ok=True)
                 cache_file.write_text(json.dumps(build))
         compiled = query_builder.compile_search(build["concepts"], {})
         headings = sorted({h for c in build["concepts"] for h in c["mesh"]})
-        # Free ablation: re-group the SAME selection with the opposite policy, so
-        # "who decides what is ORed" is measured without a second LLM call.
+        # Free ablation: rebuild the SAME selection with the opposite closure
+        # policy, so "who picks the synonyms inside a facet" is measured without a
+        # second LLM call.
         alt: dict = {}
         if mode == "hybrid" and build.get("raw", {}).get("blocks") and build.get("slate"):
             alt_blocks, _bad = pipeline._blocks_from_selection(
-                build["raw"], build["slate"], group_by_span=not group_by_span)
+                build["raw"], build["slate"], group_by_span=group_by_span,
+                closure=not closure)
             if alt_blocks:
                 res = pipeline._assemble(alt_blocks, domains, merge_slots=False,
                                          strict=strict, ix=get_index())
@@ -262,9 +267,12 @@ def main() -> int:
     ap.add_argument("--no-span-grouping", action="store_true",
                     help="hybrid: let the MODEL group candidates into blocks instead of "
                          "grouping them by the question spans they came from")
+    ap.add_argument("--no-closure", action="store_true",
+                    help="hybrid: let the MODEL pick which synonyms inside a facet to "
+                         "name, instead of deriving the facet's canonical vocabulary")
     ap.add_argument("--retrieval", action="store_true",
                     help="also measure live PubMed PMID overlap across models")
-    ap.add_argument("--out", default=str(ROOT / "data" / "determinism_v2.json"))
+    ap.add_argument("--out", default=str(ROOT / "data" / "determinism_v3.json"))
     args = ap.parse_args()
 
     models = [m.strip() for m in args.models.split(",") if m.strip()]
@@ -298,7 +306,8 @@ def main() -> int:
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         futs = {pool.submit(one_run, mode, model, pv, item, strict=strict,
                             use_cache=args.cache,
-                            group_by_span=not args.no_span_grouping): (mode, model, pv, qi)
+                            group_by_span=not args.no_span_grouping,
+                            closure=not args.no_closure): (mode, model, pv, qi)
                 for (mode, model, pv, qi, item, _r) in tasks}
         for fut, key in futs.items():
             rec = fut.result()
@@ -355,8 +364,8 @@ def main() -> int:
             report["cells"].extend(cells)
             report["by_mode"][label] = summarize(within_scores, cross)
             if cross_alt:      # same selections, opposite grouping policy
-                alt_label = label + (" (model-grouped)" if not args.no_span_grouping
-                                     else " (span-grouped)")
+                alt_label = label + (" (no closure)" if not args.no_closure
+                                     else " (closure)")
                 report["by_mode"][alt_label] = summarize(
                     [determinism([r["alt_hash"] for r in results.get(k, [])
                                   if r.get("alt_hash")])["score"]

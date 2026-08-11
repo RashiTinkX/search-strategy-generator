@@ -10,10 +10,10 @@ How far that carries to "the same question always gives the same query" is a
 measured quantity, not an assumption — see
 **[Cross-model determinism](#cross-model-determinism-three-strategies-2026-08-10)**
 for the numbers per strategy. Short version: without an LLM (`mesh_only`) it is
-1.00; with one it is 0.71–0.75 within a model and 0.24–0.43 across models, so a
-protocol has to record the model and the strategy.
+1.00; with one it is 0.90 within a model and ~0.8 across models under the hybrid
+strategy, so a protocol still has to record the model and the strategy.
 
-![Determinism results](../data/determinism_v2.png)
+![Determinism results](../data/determinism_v3.png)
 
 ```mermaid
 flowchart TD
@@ -609,51 +609,74 @@ strategies, selectable per search (`mode` on `/api/map`).
 
 ### Measured (live, 7 models × 3 questions × 3 runs, cache OFF, strict ON)
 
-`data/determinism_v2.json` and `data/determinism_v2_span.json`:
+`data/determinism_v3.json`, rendered in `data/determinism_v3.png`, tabulated with
+column definitions in `data/determinism_v3.md`:
 
 | strategy | within-model | cross-model | heading Jaccard | block-count agr. | **PMID Jaccard** | median hit-count spread |
 |---|---|---|---|---|---|---|
-| `llm` / prompt v1 (the old prompt) | 0.46 | 0.19 | 0.32 | 0.67 | 0.33 | 356,496 |
-| `llm` / prompt v2 | 0.71 | 0.24 | 0.44 | 0.81 | 0.51 | 38,309 |
-| `hybrid`, model-decided grouping | 0.73 | 0.43 | 0.71 | 0.76 | 0.39 | 1,694 |
-| `hybrid`, span grouping (**default**) | 0.75 | 0.38 | 0.70 | 0.71 | **0.56** | 1,771 |
-| `hybrid` + slot merging | 0.71 | 0.38 | 0.71 | 0.67 | – | – |
+| `llm` / prompt v1 (the old prompt) | 0.57 | 0.14 | 0.25 | 0.62 | 0.26 | 51,605 |
+| `llm` / prompt v2 | 0.71 | 0.24 | 0.47 | 0.57 | 0.18 | 16,765 |
+| `hybrid`, model picks the synonyms | 0.75 | 0.52 | 0.74 | 0.76 | – | – |
+| `hybrid`, derived synonyms (**default**) | 0.90 | **0.76** | 0.95 | 0.76 | **0.68** | 348 |
 | `mesh_only` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0 |
 
-Read it with the floor in mind: with 7 models, a chance-level modal share is
-1/7 = **0.14**, so `llm/v1` at 0.19 is essentially chance — the same place the
-original 11-model run's 0.09 (floor 0.09) sat. Against that floor:
+Read it with the floor in mind: with 7 models a chance-level modal share is
+1/7 = **0.14**, which is exactly where `llm/v1` sits — the same place the original
+11-model run's 0.09 (floor 0.09) sat. Against that floor:
 
-- **Prompt v2 is a real improvement, and mostly not in byte agreement.** Same-model
-  reproducibility 0.46 → 0.71, heading overlap 0.32 → 0.44, agreement on how many
-  facets a question has 0.67 → 0.81, retrieved-corpus overlap 0.33 → 0.51. Its
-  sharpest effect is on hallucination: headings that failed exact resolution fell
-  from **104 to 5** across the run, and the median query shrank from 7.7 KB to
-  3.8 KB — the v1 queries were flirting with PubMed's ~8 KB URL limit.
-- **Hybrid is the portability win.** Cross-model 0.43 vs 0.24, heading overlap 0.71
-  vs 0.44, hit-count spread 1,694 vs 38,309. Across every run, models cited **zero**
-  ids outside the slate and **zero** headings failed to resolve — the closed set
-  holds, so hallucination is not merely filtered, it is unrepresentable.
-- **Span grouping trades byte agreement for retrieval agreement, and is worth it.**
-  Byte agreement is unchanged (0.38 vs 0.43 is inside the noise of 7 models × 3
-  questions) because with grouping fixed, disagreement is *only* selection
-  disagreement. But PMID Jaccard rises 0.39 → **0.56**, and on the optogenetics
-  question it goes 0.43 → 0.82 with the hit-count spread collapsing from 1,674 to
-  **43**. The reason is semantic: model-decided grouping sometimes ORed a technique
-  with a brain region, inflating that model's hits from ~113 to ~1,745.
-- **Slot merging makes things worse** (0.43 → 0.38) — the evidence for leaving it
-  off. Models label identical content with different slots, so merging on that field
-  is merging on the least reliable part of the answer.
+- **Prompt v2's gains are mostly not in byte agreement.** Same-model reproducibility
+  0.57 → 0.71 and heading overlap 0.25 → 0.47, but cross-model only 0.14 → 0.24.
+  Its sharpest effect is on hallucination: headings that failed exact resolution
+  fell from **104 to 5**, and the median query shrank from 7.7 KB to 3.8 KB — the v1
+  queries were flirting with PubMed's ~8 KB URL limit. A better prompt cannot make
+  two models agree; it can only stop one model contradicting itself.
+- **Hybrid + the three canonicalisations is what moves cross-model**: 0.14 → 0.76,
+  heading overlap 0.25 → 0.95, retrieved-corpus overlap 0.26 → 0.68, hit-count
+  spread 51,605 → 348. The `model picks the synonyms` row is the ablation: it is the
+  same selections with the derivation switched off, and it drops to 0.52.
+- Across every run, models cited **zero** ids outside the slate and **zero** headings
+  failed to resolve — the closed set holds, so hallucination is not merely filtered,
+  it is unrepresentable.
 - **`mesh_only` is 1.00 on every metric**, including PMID Jaccard, because no model
   is involved. That is the ceiling for portability and the floor for judgement.
 
+**Run-to-run variance is real at this sample size.** An identical-configuration
+hybrid-only run immediately before this one scored cross-model **0.90**, heading
+Jaccard 0.95, PMID Jaccard 0.87 (`data/logs/hybrid_only_run_2026-08-10.log`), versus
+0.76 / 0.95 / 0.68 here. Three questions × seven models is 21 observations per cell,
+so treat single-decimal differences as noise and read hybrid as **≈0.8**. The
+`llm`-vs-`hybrid` gap (0.14–0.24 vs 0.76–0.90) is far outside that noise; the
+`v1`-vs-`v2` PMID Jaccard comparison is well inside it and should not be quoted.
+
+What remains is genuine judgement disagreement, not machinery: on the optogenetics
+question one model does not treat `Hippocampus` as a required facet, and on the
+CRISPR question one model omits the non-MeSH jargon facet. Those are the arguments
+two human specialists would also have.
+
 Practical guidance: if the protocol must be reproducible by another lab with a
 different model, use `mesh_only`, or `hybrid` **and record the model**. Within one
-lab, `hybrid` at 0.75 with a saved `protocol.json` is reproducible in the way that
+lab, `hybrid` at 0.90 with a saved `protocol.json` is reproducible in the way that
 matters — the protocol pins the selection, not the model's mood.
 
-There were **zero** hard failures in 192 runs (no unparseable JSON, no HTTP
-errors), across models from claude-opus-4.8 down to llama-3.1-8b.
+There were **zero** hard failures across ~600 live runs (no unparseable JSON, no
+HTTP errors), from claude-opus-4.8 down to llama-3.1-8b.
+
+### The three things that had to stop being the model's decision
+
+Each was found by asking *why* two models with the same intent still produced
+different queries, and each is a pure function of the question plus the index:
+
+| leak | symptom | fix |
+|---|---|---|
+| **grouping** | two models picked the identical four headings, one ORed `Optogenetics` with `Hippocampus` | `candidates.span_groups` — overlapping question words are one OR block |
+| **synonym choice inside a facet** | seven models named five different subsets of `{CRISPR-Cas Systems, Clustered Regularly Interspaced…, RNA, Guide, CRISPR-Cas Systems}` — one OR block, so it barely changed retrieval and changed every byte | `candidates.group_closure` — naming any member selects the facet's canonical vocabulary |
+| **prose reaching the query** | identical headings compiled to 153 vs 145 terms, because block *names* and model free-text fired different domain-vocab clusters; and the free-text-only jargon block was pure model prose (`off target`, `off-targets`, `bioinformatics`, `machine learning`, `method*`) | strict mode matches vocabulary against headings only, and the jargon block is rebuilt from the question's own unresolved phrases |
+
+The trade-off in the third row is explicit: the model's own jargon ("GUIDE-seq",
+"unintended editing") no longer reaches the query in strict mode. What survives is
+the question's unresolved wording plus whatever `data/domain_terms.json` supplies —
+both reproducible, both editable by the reviewer, neither dependent on which model
+was called.
 
 ```mermaid
 flowchart TD

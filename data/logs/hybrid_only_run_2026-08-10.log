@@ -1,0 +1,31 @@
+Modes: ['hybrid']   models: 7   questions: 3   runs: 3   strict: True   cache: False   span-grouping: True
+Dispatching 63 builds across 8 workers...
+  ... 10/63
+  ... 20/63
+  ... 30/63
+  ... 40/63
+  ... 50/63
+  ... 60/63
+  ... 63/63
+
+============================================================================================
+strategy                within-model  cross-model  heading Jaccard  block-count agr.  PMID Jaccard
+--------------------------------------------------------------------------------------------
+hybrid                          0.92         0.90             0.95              0.90          0.87
+hybrid (no closure)             0.73         0.57             0.80              0.86             -
+============================================================================================
+within-model = same model reruns compile to the same query (reproducibility)
+cross-model  = different models compile to the SAME query (portability)
+heading Jaccard = semantic overlap of chosen MeSH headings across models
+
+hybrid
+  Does optogenetic stimulation of the hippocampus impr agree=0.86 jaccard=0.93 blocks={3: 1, 4: 6} pmid_jaccard=0.89 median_hits=71 spread=43
+  single-cell RNA sequencing of microglia in Alzheimer agree=1.00 jaccard=1.00 blocks={3: 7} pmid_jaccard=1.00 median_hits=620 spread=0
+  CRISPR-Cas9 off-target effects detection methods     agree=0.86 jaccard=0.93 blocks={2: 6, 3: 1} pmid_jaccard=0.71 median_hits=10507 spread=10493
+
+hybrid (no closure)
+  Does optogenetic stimulation of the hippocampus impr agree=0.86 jaccard=0.93 blocks={3: 1, 4: 6}
+  single-cell RNA sequencing of microglia in Alzheimer agree=0.71 jaccard=0.84 blocks={3: 7}
+  CRISPR-Cas9 off-target effects detection methods     agree=0.14 jaccard=0.64 blocks={2: 2, 3: 5}
+
+Report -> data/determinism_v3.json

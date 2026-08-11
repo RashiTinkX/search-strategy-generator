@@ -57,20 +57,21 @@ def _retrieval(mode: dict, field: str):
     return vals or None
 
 
-def load_rows(main: Path, span: Path) -> list[dict]:
+WANTED = [
+    ("llm/v1", "llm · prompt v1 (old)", "llm"),
+    ("llm/v2", "llm · prompt v2", "llm"),
+    ("hybrid (no closure)", "hybrid · model picks synonyms", "hybrid"),
+    ("hybrid", "hybrid · derived synonyms", "hybrid"),
+    ("mesh_only", "mesh_only · no LLM", "mesh_only"),
+]
+
+
+def load_rows(report_path: Path) -> list[dict]:
     """Fixed strategy order: prompt A/B first, then hybrid variants, then no-LLM."""
-    reports = {"main": json.loads(main.read_text()), "span": json.loads(span.read_text())}
-    wanted = [
-        ("main", "llm/v1", "llm · prompt v1 (old)", "llm"),
-        ("main", "llm/v2", "llm · prompt v2", "llm"),
-        ("main", "hybrid", "hybrid · model grouping", "hybrid"),
-        ("span", "hybrid", "hybrid · span grouping", "hybrid"),
-        ("main", "hybrid +slot-merge", "hybrid · + slot merging", "hybrid"),
-        ("main", "mesh_only", "mesh_only · no LLM", "mesh_only"),
-    ]
+    report = json.loads(report_path.read_text())
     rows = []
-    for source, key, label, family in wanted:
-        m = reports[source]["by_mode"].get(key)
+    for key, label, family in WANTED:
+        m = report["by_mode"].get(key)
         if m is None:
             continue
         pj = _retrieval(m, "pmid_jaccard")
@@ -80,7 +81,7 @@ def load_rows(main: Path, span: Path) -> list[dict]:
             **{k: m[k] for k, _, _ in METRICS if k in m},
             "pmid_jaccard": statistics.fmean(pj) if pj else None,
             "count_spread": statistics.median(spread) if spread else None,
-            "n_models": len(reports[source]["models"]),
+            "n_models": len(report["models"]),
         })
     return rows
 
@@ -195,6 +196,38 @@ def draw(rows: list[dict], mode: str, out: Path, n_models: int) -> None:
     print(f"  figure -> {out}")
 
 
+GLOSSARY = """
+## What the columns mean
+
+| column | definition |
+|---|---|
+| **within-model** | One model, one question, run 3×: the share of runs that compiled the **byte-identical** query. 1.00 means rerunning your own search is safe. |
+| **cross-model** | Different models, same question: the share that compiled the byte-identical query (modal share). **Chance level is 1/number-of-models**, so this number is meaningless without knowing how many models were in the run, and is not comparable across runs of different size. |
+| **heading Jaccard** | Mean pairwise overlap of the chosen MeSH heading *sets* — \\|A∩B\\| / \\|A∪B\\|. Ignores wording, order and formatting, so it measures whether models agreed on the *substance*. 1.00 = same headings. |
+| **block-count agr.** | Share of models that agree on how many ANDed facets the question has. Catches the "one model used 1 block, another used 7" failure directly. |
+| **PMID Jaccard** | Mean pairwise overlap of the PMID sets PubMed **actually returns** for each pair of queries. 1.00 = the two searches retrieve the same papers. This is the metric a reviewer should care about: two differently-worded queries can retrieve one corpus, and two similar-looking queries can retrieve different ones. |
+| **median hit spread** | Across models, the largest hit count minus the smallest, median over the questions. An absolute-count companion to PMID Jaccard: a spread of 356,496 means some model's query was wildly broader than another's. |
+
+## What the strategies mean
+
+| strategy | meaning |
+|---|---|
+| **llm** | The model proposes the concept blocks and MeSH headings freely. `prompt v1` is the original prompt, `prompt v2` the rewritten one. |
+| **hybrid** | A deterministic MeSH lookup over the question produces a numbered candidate slate; the model may only *select* ids from it, so it cannot invent vocabulary. |
+| **span grouping** | Who decides which headings share an OR block. The *question* decides: candidates found from overlapping question words are alternatives for one facet; candidates from disjoint words stay ANDed. The alternative (`model grouping`) lets the model group them, which let one model OR a technique with a brain region. |
+| **closure** | Who picks the synonyms *inside* a chosen facet. With closure, the facet's canonical vocabulary is derived from the slate (every exact match, plus reworded matches at least as well-supported); the model only decides whether the facet belongs. Without it, the model names the synonyms — and models disagree there far more than they disagree about facets. |
+| **mesh_only** | No LLM at all — every maximal MeSH match in the question becomes a block. Model-independent by construction. |
+
+Two policies were measured and rejected: **slot merging** (merging blocks the model
+gave the same PICO label — models label identical content with different slots, and
+it cost 0.05 cross-model), and **model grouping** (letting the model decide which
+headings share an OR block — one model ORed a technique with a brain region).
+
+A `–` means the row was computed offline from stored selections, so it never issued
+PubMed queries and has no retrieval numbers.
+"""
+
+
 def write_table(rows: list[dict], out: Path, n_models: int) -> None:
     """The table view: same numbers, readable without the figure."""
     head = ["strategy"] + [t for _, t, _ in METRICS] + ["median hit spread"]
@@ -212,18 +245,18 @@ def write_table(rows: list[dict], out: Path, n_models: int) -> None:
             cells.append(f"{v:.2f}" if v is not None else "–")
         cells.append(f"{r['count_spread']:,.0f}" if r["count_spread"] is not None else "–")
         lines.append("| " + " | ".join(cells) + " |")
+    lines.append(GLOSSARY)
     out.write_text("\n".join(lines) + "\n")
     print(f"  table  -> {out}")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--main", default=str(ROOT / "data" / "determinism_v2.json"))
-    ap.add_argument("--span", default=str(ROOT / "data" / "determinism_v2_span.json"))
-    ap.add_argument("--out", default=str(ROOT / "data" / "determinism_v2.png"))
+    ap.add_argument("--report", default=str(ROOT / "data" / "determinism_v3.json"))
+    ap.add_argument("--out", default=str(ROOT / "data" / "determinism_v3.png"))
     args = ap.parse_args()
 
-    rows = load_rows(Path(args.main), Path(args.span))
+    rows = load_rows(Path(args.report))
     n_models = rows[0]["n_models"] if rows else 0
     out = Path(args.out)
     draw(rows, "light", out, n_models)

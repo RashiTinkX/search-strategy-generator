@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT))
 
 from backend import canonical, pipeline, query_builder            # noqa: E402
 from backend.candidates import (                                  # noqa: E402
-    candidate_slate, matched_spans, mesh_only_blocks, span_groups)
+    candidate_slate, group_closure, matched_spans, mesh_only_blocks, span_groups)
 from backend.mesh_index import get_index                          # noqa: E402
 
 Q1 = ("Does optogenetic stimulation of the hippocampus improve memory "
@@ -133,6 +133,42 @@ def main() -> int:
     check("same headings, different model grouping -> same query",
           compile_sel(sel_a) == compile_sel(sel_b),
           f"{compile_sel(sel_a)} vs {compile_sel(sel_b)}")
+
+    print("\nfacet closure (the question decides the synonyms, the model the facets)")
+    sl3 = candidate_slate(Q3, ix)
+    ids3 = {c["label"]: c["id"] for c in sl3["candidates"]}
+    crispr = group_closure(sl3, [ids3["CRISPR-Cas Systems"]])
+    got = {m["label"] for ms in crispr.values() for m in ms}
+    check("naming one CRISPR descriptor pulls in its whole facet",
+          got == {"CRISPR-Cas Systems", "RNA, Guide, CRISPR-Cas Systems",
+                  "Clustered Regularly Interspaced Short Palindromic Repeats"}, str(sorted(got)))
+    sl2 = candidate_slate(Q2, ix)
+    ids2 = {c["label"]: c["id"] for c in sl2["candidates"]}
+    method = {m["label"] for ms in group_closure(sl2, [ids2["Sequence Analysis, RNA"]]).values()
+              for m in ms}
+    check("closure keeps the well-supported phrase match",
+          "Single-Cell Gene Expression Analysis" in method, str(sorted(method)))
+    check("closure drops one-word phrase noise (Comet Assay)", "Comet Assay" not in method)
+    disease = {m["label"] for ms in group_closure(sl2, [ids2["Alzheimer Disease"]]).values()
+               for m in ms}
+    check("closure drops a phrase weaker than the exact match (Amyloid beta-Peptides)",
+          disease == {"Alzheimer Disease"}, str(sorted(disease)))
+    check("closure replaces a broader pick with the facet's exact heading",
+          {m["label"] for ms in group_closure(sl2, [ids2["Dementia"]]).values() for m in ms}
+          == {"Alzheimer Disease"})
+
+    print("\nno model prose reaches a strict query")
+    a = {"blocks": [{"slot": "method", "name": "sequencing", "ids": [ids2["Sequence Analysis, RNA"]],
+                     "freetext": ["scRNA-seq", "single cell transcriptomics"]}]}
+    b = {"blocks": [{"slot": "context", "name": "rna-seq assay",
+                     "ids": [ids2["Sequence Analysis, RNA"]], "freetext": []}]}
+    def compile_sel2(sel):
+        blocks, _ = pipeline._blocks_from_selection(sel, sl2)
+        res = pipeline._assemble(blocks, ["bioinformatics"], merge_slots=False,
+                                 strict=True, ix=ix)
+        return query_builder.compile_search(res["concepts"], {})["hash"]
+    check("differing block names/free-text do not change the query",
+          compile_sel2(a) == compile_sel2(b), f"{compile_sel2(a)} vs {compile_sel2(b)}")
 
     print("\nmesh_only determinism")
     h = {query_builder.compile_search(

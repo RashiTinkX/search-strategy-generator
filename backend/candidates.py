@@ -360,6 +360,54 @@ def span_groups(slate: dict) -> dict[int, int]:
     return {c["id"]: find(c["id"]) for c in cands}
 
 
+def group_closure(slate: dict, selected_ids) -> dict[int, list[dict]]:
+    """
+    The canonical vocabulary of every facet the selection touched.
+
+    Measured problem: models agree on the FACETS and disagree on which
+    near-synonym to name inside one. For "CRISPR-Cas9" the slate offers
+    `Clustered Regularly Interspaced Short Palindromic Repeats` (the question's
+    literal words), `CRISPR-Cas Systems` and `RNA, Guide, CRISPR-Cas Systems` —
+    all in one OR block, so the choice barely changes what PubMed returns but
+    changes every byte of the query. Seven models produced five different answers.
+
+    So the model's decision is reduced to the one it is consistent about — is this
+    facet required at all — and the vocabulary inside a chosen facet is derived:
+
+      * every `exact` candidate (the question's own words) is included;
+      * a `phrase` candidate (same idea, different MeSH wording) is included only
+        if its matched window is at least as long as the longest exact window in
+        the group — a reworded match must be at least as well-supported as the
+        literal one. This is what keeps `Single-Cell Gene Expression Analysis`
+        (window "single-cell sequencing") while dropping `Comet Assay` and
+        `Amyloid beta-Peptides`, which matched a single word;
+      * `broader` candidates only survive in a group that has neither.
+
+    Consequence to be aware of: selecting any member of a facet selects that
+    facet's whole canonical vocabulary. The model can drop a facet, not a synonym.
+    """
+    groups = span_groups(slate)
+    by_id = {c["id"]: c for c in slate.get("candidates", [])}
+    members: dict[int, list[dict]] = {}
+    for c in slate.get("candidates", []):
+        members.setdefault(groups[c["id"]], []).append(c)
+
+    out: dict[int, list[dict]] = {}
+    for gid in sorted({groups[i] for i in selected_ids if i in by_id}):
+        ms = members[gid]
+        exact = [m for m in ms if m["relation"] == "exact"]
+        phrase = [m for m in ms if m["relation"] == "phrase"]
+        if exact:
+            floor = max(m.get("size", 0) for m in exact)
+            keep = exact + [m for m in phrase if m.get("size", 0) >= floor]
+        elif phrase:
+            keep = phrase
+        else:
+            keep = ms
+        out[gid] = sorted(keep, key=lambda m: (m["label"].lower(), m["dui"]))
+    return out
+
+
 def mesh_only_blocks(question: str, ix: MeshIndex) -> list[dict]:
     """
     LLM-free baseline: one ANDed block per maximal matched span.
