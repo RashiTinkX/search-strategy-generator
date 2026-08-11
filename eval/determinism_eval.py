@@ -214,40 +214,112 @@ def summarize(within_scores: list[float], cross: list[dict]) -> dict:
         "block_count_agreement_mean": round(
             statistics.fmean(c["block_count_agreement"] for c in cross), 4) if cross else 0.0,
         # the metric a reviewer actually cares about: do the queries return the
-        # same papers, whatever the strings look like
-        "pmid_jaccard_mean": round(statistics.fmean(
-            c["retrieval"]["pmid_jaccard"] for c in cross if "retrieval" in c), 4)
-            if any("retrieval" in c for c in cross) else None,
+        # same papers, whatever the strings look like. Questions whose result set
+        # was too large to compare in full are excluded, never counted as agreement.
+        "pmid_jaccard_mean": round(statistics.fmean(pj), 4) if (pj := [
+            c["retrieval"]["pmid_jaccard"] for c in cross
+            if c.get("retrieval", {}).get("pmid_jaccard") is not None]) else None,
+        "pmid_jaccard_questions": sum(
+            1 for c in cross if c.get("retrieval", {}).get("pmid_jaccard") is not None),
         "per_question": cross,
     }
 
 
 def retrieval_overlap(queries: dict[str, str], api_key: str, email: str,
-                      cap: int = 20000) -> dict:
-    """Cross-model overlap of the PMID sets PubMed returns (live)."""
+                      cap: int = 200000, _cache: dict | None = None) -> dict:
+    """
+    Cross-model overlap of the PMID sets PubMed returns (live).
+
+    Two things this must not do, both of which it used to. It must not compare
+    TRUNCATED sets: `pmids()` silently stopped at NCBI's 9,999-record ceiling, so
+    an overlap computed over a 77,000-hit query was measured on an arbitrary
+    9,999-record prefix. And it must not report a number when it could not measure
+    one — a query above `cap` is now recorded as skipped, with the count kept
+    (counts are one cheap request and always available).
+
+    Identical queries are fetched once (`_cache`), which matters: the better the
+    strategy, the more models produce the same query.
+    """
     from backend.pubmed import PubMed
     pm = PubMed(api_key=api_key, email=email)
+    cache = _cache if _cache is not None else {}
     sets: dict[str, set] = {}
     counts: dict[str, int] = {}
+    skipped: list[str] = []
     for model, q in sorted(queries.items()):
         try:
-            res = pm.search(q)
-            counts[model] = res["count"]
-            sets[model] = set(pm.pmids(q, retmax=min(cap, res["count"]))) if res["count"] else set()
-        except Exception as e:                                    # network/NCBI hiccup
+            if q in cache:
+                counts[model], sets[model] = cache[q]
+                continue
+            n = pm.count(q)
+            counts[model] = n
+            if n == 0:
+                sets[model] = set()
+            elif n > cap:
+                skipped.append(model)
+            else:
+                sets[model] = set(pm.pmids(q))          # complete, partitioned
+            cache[q] = (counts[model], sets.get(model, set()))
+        except Exception as e:                           # network / NCBI hiccup
             counts[model] = -1
-            sets[model] = set()
             print(f"    ! retrieval failed for {model}: {e}", flush=True)
     vals = [c for c in counts.values() if c >= 0]
+    measured = [s for m, s in sets.items() if m not in skipped and s]
+    # One distinct query (always the case for mesh_only) means overlap is 1.0 by
+    # construction — there are no pairs to measure. Flagged, not silently averaged
+    # in as if it were evidence about models agreeing.
+    one_query = len({q for q in queries.values()}) == 1
     return {
         "counts": counts,
         "count_spread": (max(vals) - min(vals)) if vals else 0,
         "median_count": int(statistics.median(vals)) if vals else 0,
-        "pmid_jaccard": mean_pairwise_jaccard([s for s in sets.values() if s]),
+        # None, not a number, when some model's result set was too large to compare
+        "pmid_jaccard": 1.0 if one_query else (
+            mean_pairwise_jaccard(measured) if len(measured) >= 2 and not skipped else None),
+        "pmid_jaccard_by_construction": one_query,
+        "pmid_jaccard_models": len(measured),
+        "skipped_too_large": sorted(skipped),
+        "cap": cap,
     }
 
 
 # ---------------------------------------------------------------- driver
+
+def recompute_retrieval(path: Path) -> int:
+    """
+    Redo the retrieval metric of an existing report from the queries it stored.
+
+    Needed because the first runs measured PMID overlap with a truncating
+    `pmids()`; the queries themselves are in the report, so the corrected numbers
+    cost nothing but NCBI requests.
+    """
+    report = json.loads(path.read_text())
+    by_question: dict[tuple, dict[str, str]] = {}
+    for c in report["cells"]:
+        if c.get("sample_query"):
+            by_question.setdefault((c["mode"], c["question"]), {})[
+                c["model"].split("/")[-1]] = c["sample_query"]
+    cache: dict[str, tuple] = {}
+    api_key, email = os.environ.get("NCBI_API_KEY", ""), os.environ.get("NCBI_EMAIL", "")
+    for label, mode_summary in report["by_mode"].items():
+        for c in mode_summary["per_question"]:
+            queries = by_question.get((label, c["question"]))
+            if not queries:
+                c.pop("retrieval", None)
+                continue
+            print(f"  {label} · {c['question'][:44]} ({len(set(queries.values()))} distinct "
+                  f"queries)", flush=True)
+            c["retrieval"] = retrieval_overlap(queries, api_key, email, _cache=cache)
+        report["by_mode"][label] = summarize(
+            [], mode_summary["per_question"]) | {
+            k: mode_summary[k] for k in ("within_model_mean",)}
+        report["by_mode"][label]["per_question"] = mode_summary["per_question"]
+    report["retrieval_recomputed"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    path.write_text(json.dumps(report, indent=2))
+    print_report(report)
+    print(f"\nReport -> {path}")
+    return 0
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
@@ -272,8 +344,14 @@ def main() -> int:
                          "name, instead of deriving the facet's canonical vocabulary")
     ap.add_argument("--retrieval", action="store_true",
                     help="also measure live PubMed PMID overlap across models")
+    ap.add_argument("--retrieval-from", default="",
+                    help="recompute the retrieval block of an existing report from the "
+                         "queries it stored (no LLM calls) and rewrite it in place")
     ap.add_argument("--out", default=str(ROOT / "data" / "determinism_v3.json"))
     args = ap.parse_args()
+
+    if args.retrieval_from:
+        return recompute_retrieval(Path(args.retrieval_from))
 
     models = [m.strip() for m in args.models.split(",") if m.strip()]
     modes = [m.strip() for m in args.modes.split(",") if m.strip()]
@@ -398,8 +476,10 @@ def print_report(report: dict) -> None:
                     f"jaccard={c['heading_jaccard']:.2f} blocks={c['block_counts']}")
             if "retrieval" in c:
                 r = c["retrieval"]
-                line += (f" pmid_jaccard={r['pmid_jaccard']:.2f} "
-                         f"median_hits={r['median_count']} spread={r['count_spread']}")
+                pj = r.get("pmid_jaccard")
+                line += (f" pmid_jaccard={pj:.2f}" if pj is not None else
+                         f" pmid_jaccard=n/a({len(r.get('skipped_too_large') or []) and 'too large' or 'no pairs'})")
+                line += f" median_hits={r['median_count']} spread={r['count_spread']}"
             print(line)
     errs = [c for c in report["cells"] if c["errors"]]
     if errs:

@@ -53,7 +53,8 @@ METRICS = [
 
 
 def _retrieval(mode: dict, field: str):
-    vals = [c["retrieval"][field] for c in mode["per_question"] if "retrieval" in c]
+    vals = [c["retrieval"][field] for c in mode["per_question"]
+            if c.get("retrieval", {}).get(field) is not None]
     return vals or None
 
 
@@ -205,7 +206,7 @@ GLOSSARY = """
 | **cross-model** | Different models, same question: the share that compiled the byte-identical query (modal share). **Chance level is 1/number-of-models**, so this number is meaningless without knowing how many models were in the run, and is not comparable across runs of different size. |
 | **heading Jaccard** | Mean pairwise overlap of the chosen MeSH heading *sets* — \\|A∩B\\| / \\|A∪B\\|. Ignores wording, order and formatting, so it measures whether models agreed on the *substance*. 1.00 = same headings. |
 | **block-count agr.** | Share of models that agree on how many ANDed facets the question has. Catches the "one model used 1 block, another used 7" failure directly. |
-| **PMID Jaccard** | Mean pairwise overlap of the PMID sets PubMed **actually returns** for each pair of queries. 1.00 = the two searches retrieve the same papers. This is the metric a reviewer should care about: two differently-worded queries can retrieve one corpus, and two similar-looking queries can retrieve different ones. |
+| **PMID Jaccard** | Mean pairwise overlap of the PMID sets PubMed **actually returns** for each pair of queries. 1.00 = the two searches retrieve the same papers. This is the metric a reviewer should care about: two differently-worded queries can retrieve one corpus, and two similar-looking queries can retrieve different ones. Measured on **complete** sets — a question where any model's result set exceeds the cap (25,000) is reported as not measured rather than compared on a truncated prefix. For `mesh_only` there is only one query, so its 1.00 is true by construction, not measured. |
 | **median hit spread** | Across models, the largest hit count minus the smallest, median over the questions. An absolute-count companion to PMID Jaccard: a spread of 356,496 means some model's query was wildly broader than another's. |
 
 ## What the strategies mean

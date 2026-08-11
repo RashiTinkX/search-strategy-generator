@@ -4,7 +4,7 @@ Chance-level cross-model agreement at n=7 is 0.14; numbers are not comparable ac
 
 | strategy | within-model | cross-model | heading Jaccard | block-count agr. | PMID Jaccard | median hit spread |
 |---|---|---|---|---|---|---|
-| llm · prompt v1 (old) | 0.57 | 0.14 | 0.25 | 0.62 | 0.26 | 51,605 |
+| llm · prompt v1 (old) | 0.57 | 0.14 | 0.25 | 0.62 | 0.27 | 51,605 |
 | llm · prompt v2 | 0.71 | 0.24 | 0.47 | 0.57 | 0.18 | 16,765 |
 | hybrid · model picks synonyms | 0.75 | 0.52 | 0.74 | 0.76 | – | – |
 | hybrid · derived synonyms | 0.90 | 0.76 | 0.95 | 0.76 | 0.68 | 348 |
@@ -18,7 +18,7 @@ Chance-level cross-model agreement at n=7 is 0.14; numbers are not comparable ac
 | **cross-model** | Different models, same question: the share that compiled the byte-identical query (modal share). **Chance level is 1/number-of-models**, so this number is meaningless without knowing how many models were in the run, and is not comparable across runs of different size. |
 | **heading Jaccard** | Mean pairwise overlap of the chosen MeSH heading *sets* — \|A∩B\| / \|A∪B\|. Ignores wording, order and formatting, so it measures whether models agreed on the *substance*. 1.00 = same headings. |
 | **block-count agr.** | Share of models that agree on how many ANDed facets the question has. Catches the "one model used 1 block, another used 7" failure directly. |
-| **PMID Jaccard** | Mean pairwise overlap of the PMID sets PubMed **actually returns** for each pair of queries. 1.00 = the two searches retrieve the same papers. This is the metric a reviewer should care about: two differently-worded queries can retrieve one corpus, and two similar-looking queries can retrieve different ones. |
+| **PMID Jaccard** | Mean pairwise overlap of the PMID sets PubMed **actually returns** for each pair of queries. 1.00 = the two searches retrieve the same papers. This is the metric a reviewer should care about: two differently-worded queries can retrieve one corpus, and two similar-looking queries can retrieve different ones. Measured on **complete** sets — a question where any model's result set exceeds the cap (25,000) is reported as not measured rather than compared on a truncated prefix. For `mesh_only` there is only one query, so its 1.00 is true by construction, not measured. |
 | **median hit spread** | Across models, the largest hit count minus the smallest, median over the questions. An absolute-count companion to PMID Jaccard: a spread of 356,496 means some model's query was wildly broader than another's. |
 
 ## What the strategies mean

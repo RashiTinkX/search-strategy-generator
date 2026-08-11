@@ -1,0 +1,52 @@
+  hybrid · Does optogenetic stimulation of the hippocam (3 distinct queries)
+  hybrid · single-cell RNA sequencing of microglia in A (2 distinct queries)
+  hybrid · CRISPR-Cas9 off-target effects detection met (3 distinct queries)
+  llm/v1 · Does optogenetic stimulation of the hippocam (7 distinct queries)
+  llm/v1 · single-cell RNA sequencing of microglia in A (7 distinct queries)
+  llm/v1 · CRISPR-Cas9 off-target effects detection met (7 distinct queries)
+  llm/v2 · Does optogenetic stimulation of the hippocam (6 distinct queries)
+  llm/v2 · single-cell RNA sequencing of microglia in A (6 distinct queries)
+  llm/v2 · CRISPR-Cas9 off-target effects detection met (7 distinct queries)
+  mesh_only · Does optogenetic stimulation of the hippocam (1 distinct queries)
+  mesh_only · single-cell RNA sequencing of microglia in A (1 distinct queries)
+  mesh_only · CRISPR-Cas9 off-target effects detection met (1 distinct queries)
+
+============================================================================================
+strategy                within-model  cross-model  heading Jaccard  block-count agr.  PMID Jaccard
+--------------------------------------------------------------------------------------------
+hybrid                          0.90         0.76             0.95              0.76          0.68
+hybrid (no closure)             0.75         0.52             0.74              0.76             -
+llm/v1                          0.57         0.14             0.25              0.62          0.27
+llm/v2                          0.71         0.24             0.47              0.57          0.18
+mesh_only                       1.00         1.00             1.00              1.00          1.00
+============================================================================================
+within-model = same model reruns compile to the same query (reproducibility)
+cross-model  = different models compile to the SAME query (portability)
+heading Jaccard = semantic overlap of chosen MeSH headings across models
+
+hybrid
+  Does optogenetic stimulation of the hippocampus impr agree=0.71 jaccard=0.93 blocks={'3': 1, '4': 5, '5': 1} pmid_jaccard=0.70 median_hits=71 spread=94
+  single-cell RNA sequencing of microglia in Alzheimer agree=0.86 jaccard=1.00 blocks={'3': 6, '4': 1} pmid_jaccard=0.84 median_hits=620 spread=348
+  CRISPR-Cas9 off-target effects detection methods     agree=0.71 jaccard=0.93 blocks={'1': 1, '2': 5, '3': 1} pmid_jaccard=0.51 median_hits=10509 spread=77753
+
+hybrid (no closure)
+  Does optogenetic stimulation of the hippocampus impr agree=0.71 jaccard=0.93 blocks={'3': 1, '4': 5, '6': 1}
+  single-cell RNA sequencing of microglia in Alzheimer agree=0.71 jaccard=0.75 blocks={'3': 6, '4': 1}
+  CRISPR-Cas9 off-target effects detection methods     agree=0.14 jaccard=0.54 blocks={'1': 1, '2': 1, '3': 5}
+
+llm/v1
+  Does optogenetic stimulation of the hippocampus impr agree=0.14 jaccard=0.32 blocks={'2': 1, '4': 5, '5': 1} pmid_jaccard=0.63 median_hits=397 spread=1091
+  single-cell RNA sequencing of microglia in Alzheimer agree=0.14 jaccard=0.28 blocks={'2': 2, '3': 4, '4': 1} pmid_jaccard=0.10 median_hits=2481 spread=51605
+  CRISPR-Cas9 off-target effects detection methods     agree=0.14 jaccard=0.15 blocks={'1': 2, '3': 4, '4': 1} pmid_jaccard=0.07 median_hits=1495 spread=77587
+
+llm/v2
+  Does optogenetic stimulation of the hippocampus impr agree=0.29 jaccard=0.50 blocks={'3': 5, '4': 2} pmid_jaccard=0.28 median_hits=114 spread=27218
+  single-cell RNA sequencing of microglia in Alzheimer agree=0.29 jaccard=0.74 blocks={'2': 3, '3': 3, '4': 1} pmid_jaccard=0.21 median_hits=596 spread=12603
+  CRISPR-Cas9 off-target effects detection methods     agree=0.14 jaccard=0.17 blocks={'2': 4, '3': 3} pmid_jaccard=0.05 median_hits=2941 spread=16765
+
+mesh_only
+  Does optogenetic stimulation of the hippocampus impr agree=1.00 jaccard=1.00 blocks={'4': 1} pmid_jaccard=1.00 median_hits=71 spread=0
+  single-cell RNA sequencing of microglia in Alzheimer agree=1.00 jaccard=1.00 blocks={'3': 1} pmid_jaccard=1.00 median_hits=596 spread=0
+  CRISPR-Cas9 off-target effects detection methods     agree=1.00 jaccard=1.00 blocks={'1': 1} pmid_jaccard=1.00 median_hits=65036 spread=0
+
+Report -> data/determinism_v3.json

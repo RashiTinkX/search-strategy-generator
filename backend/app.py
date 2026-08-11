@@ -219,9 +219,10 @@ def api_search(req: SearchReq):
     count = res["count"]
     if count == 0:
         return {"count": 0, "fetched": 0, "articles": [], "translation": res["translation"]}
-    articles = pm.fetch_all(
-        res["webenv"], res["query_key"], count, max_records=req.max_records,
-    )
+    # fetch_query, not fetch_all: past 9,999 records NCBI's history server refuses
+    # retstart, so the query has to be split by publication date.
+    fetched = pm.fetch_query(req.query, max_records=req.max_records)
+    articles = fetched["articles"]
     rows = [a.to_row() for a in articles]
 
     qhash = query_builder.query_hash(req.query)
@@ -237,7 +238,12 @@ def api_search(req: SearchReq):
         "pubmed_translation": res["translation"],
         "total_count": count,
         "fetched": len(articles),
-        "capped": req.max_records is not None and count > req.max_records,
+        "capped": fetched["capped"],
+        # audit trail for a >9,999-hit search: which date slices were walked, and
+        # whether any records fell outside them
+        "date_slices": [{k: s[k] for k in ("from", "to", "count", "truncated")}
+                        for s in fetched["slices"]] if len(fetched["slices"]) > 1 else [],
+        "records_unaccounted": fetched["missing"],
         "timestamp": stamp,
     }
     (folder / "protocol.json").write_text(json.dumps(protocol, indent=2), encoding="utf-8")
@@ -249,6 +255,8 @@ def api_search(req: SearchReq):
         "translation": res["translation"],
         "hash": qhash,
         "folder": folder.name,
+        "slices": len(fetched["slices"]),
+        "records_unaccounted": fetched["missing"],
         "articles": rows,
     }
 

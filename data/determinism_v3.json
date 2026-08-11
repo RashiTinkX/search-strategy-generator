@@ -2149,7 +2149,8 @@
       "cross_model_mean": 0.7619,
       "heading_jaccard_mean": 0.9524,
       "block_count_agreement_mean": 0.7619,
-      "pmid_jaccard_mean": 0.679,
+      "pmid_jaccard_mean": 0.6827,
+      "pmid_jaccard_questions": 3,
       "per_question": [
         {
           "n_models": 7,
@@ -2182,7 +2183,11 @@
             },
             "count_spread": 94,
             "median_count": 71,
-            "pmid_jaccard": 0.6999
+            "pmid_jaccard": 0.6999,
+            "pmid_jaccard_by_construction": false,
+            "pmid_jaccard_models": 7,
+            "skipped_too_large": [],
+            "cap": 200000
           }
         },
         {
@@ -2216,7 +2221,11 @@
             },
             "count_spread": 348,
             "median_count": 620,
-            "pmid_jaccard": 0.8396
+            "pmid_jaccard": 0.8396,
+            "pmid_jaccard_by_construction": false,
+            "pmid_jaccard_models": 7,
+            "skipped_too_large": [],
+            "cap": 200000
           }
         },
         {
@@ -2250,7 +2259,11 @@
             },
             "count_spread": 77753,
             "median_count": 10509,
-            "pmid_jaccard": 0.4974
+            "pmid_jaccard": 0.5087,
+            "pmid_jaccard_by_construction": false,
+            "pmid_jaccard_models": 7,
+            "skipped_too_large": [],
+            "cap": 200000
           }
         }
       ]
@@ -2261,6 +2274,7 @@
       "heading_jaccard_mean": 0.7388,
       "block_count_agreement_mean": 0.7619,
       "pmid_jaccard_mean": null,
+      "pmid_jaccard_questions": 0,
       "per_question": [
         {
           "n_models": 7,
@@ -2324,7 +2338,8 @@
       "cross_model_mean": 0.1429,
       "heading_jaccard_mean": 0.2495,
       "block_count_agreement_mean": 0.619,
-      "pmid_jaccard_mean": 0.2625,
+      "pmid_jaccard_mean": 0.2653,
+      "pmid_jaccard_questions": 3,
       "per_question": [
         {
           "n_models": 7,
@@ -2353,7 +2368,11 @@
             },
             "count_spread": 1091,
             "median_count": 397,
-            "pmid_jaccard": 0.6276
+            "pmid_jaccard": 0.6276,
+            "pmid_jaccard_by_construction": false,
+            "pmid_jaccard_models": 6,
+            "skipped_too_large": [],
+            "cap": 200000
           }
         },
         {
@@ -2383,7 +2402,11 @@
             },
             "count_spread": 51605,
             "median_count": 2481,
-            "pmid_jaccard": 0.0978
+            "pmid_jaccard": 0.0969,
+            "pmid_jaccard_by_construction": false,
+            "pmid_jaccard_models": 7,
+            "skipped_too_large": [],
+            "cap": 200000
           }
         },
         {
@@ -2413,7 +2436,11 @@
             },
             "count_spread": 77587,
             "median_count": 1495,
-            "pmid_jaccard": 0.062
+            "pmid_jaccard": 0.0714,
+            "pmid_jaccard_by_construction": false,
+            "pmid_jaccard_models": 7,
+            "skipped_too_large": [],
+            "cap": 200000
           }
         }
       ]
@@ -2423,7 +2450,8 @@
       "cross_model_mean": 0.2381,
       "heading_jaccard_mean": 0.4703,
       "block_count_agreement_mean": 0.5714,
-      "pmid_jaccard_mean": 0.1805,
+      "pmid_jaccard_mean": 0.1784,
+      "pmid_jaccard_questions": 3,
       "per_question": [
         {
           "n_models": 7,
@@ -2452,7 +2480,11 @@
             },
             "count_spread": 27218,
             "median_count": 114,
-            "pmid_jaccard": 0.2793
+            "pmid_jaccard": 0.2754,
+            "pmid_jaccard_by_construction": false,
+            "pmid_jaccard_models": 7,
+            "skipped_too_large": [],
+            "cap": 200000
           }
         },
         {
@@ -2483,7 +2515,11 @@
             },
             "count_spread": 12603,
             "median_count": 596,
-            "pmid_jaccard": 0.2122
+            "pmid_jaccard": 0.2079,
+            "pmid_jaccard_by_construction": false,
+            "pmid_jaccard_models": 7,
+            "skipped_too_large": [],
+            "cap": 200000
           }
         },
         {
@@ -2512,7 +2548,11 @@
             },
             "count_spread": 16765,
             "median_count": 2941,
-            "pmid_jaccard": 0.0501
+            "pmid_jaccard": 0.0518,
+            "pmid_jaccard_by_construction": false,
+            "pmid_jaccard_models": 7,
+            "skipped_too_large": [],
+            "cap": 200000
           }
         }
       ]
@@ -2523,6 +2563,7 @@
       "heading_jaccard_mean": 1.0,
       "block_count_agreement_mean": 1.0,
       "pmid_jaccard_mean": 1.0,
+      "pmid_jaccard_questions": 3,
       "per_question": [
         {
           "n_models": 1,
@@ -2543,7 +2584,11 @@
             },
             "count_spread": 0,
             "median_count": 71,
-            "pmid_jaccard": 1.0
+            "pmid_jaccard": 1.0,
+            "pmid_jaccard_by_construction": true,
+            "pmid_jaccard_models": 1,
+            "skipped_too_large": [],
+            "cap": 200000
           }
         },
         {
@@ -2565,7 +2610,11 @@
             },
             "count_spread": 0,
             "median_count": 596,
-            "pmid_jaccard": 1.0
+            "pmid_jaccard": 1.0,
+            "pmid_jaccard_by_construction": true,
+            "pmid_jaccard_models": 1,
+            "skipped_too_large": [],
+            "cap": 200000
           }
         },
         {
@@ -2587,10 +2636,15 @@
             },
             "count_spread": 0,
             "median_count": 65036,
-            "pmid_jaccard": 1.0
+            "pmid_jaccard": 1.0,
+            "pmid_jaccard_by_construction": true,
+            "pmid_jaccard_models": 1,
+            "skipped_too_large": [],
+            "cap": 200000
           }
         }
       ]
     }
-  }
+  },
+  "retrieval_recomputed": "2026-08-11 08:46:41"
 }

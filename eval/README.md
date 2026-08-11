@@ -54,6 +54,13 @@ output.
 `3 runs × 3 questions × 7 models × (hybrid + llm/v1 + llm/v2)` = 189 calls;
 `mesh_only` makes none.
 
+**`--retrieval-from <report.json>`** recomputes only the retrieval block of an
+existing report, from the queries the report already stores — no LLM calls, just
+NCBI. Use it after changing how retrieval is measured (that is why it exists: the
+first runs measured PMID overlap with a `pmids()` that silently stopped at NCBI's
+9,999-record ceiling, so overlaps on large result sets were computed from an
+arbitrary prefix).
+
 ## `replay_baseline.py` — offline ablation, no API needed
 
 Replays the 33 archived proposals in `data/map_cache/` (the raw LLM output from the

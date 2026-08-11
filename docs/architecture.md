@@ -404,21 +404,51 @@ flowchart TD
   stable order. Same inputs ⇒ byte-identical `query` ⇒ identical `hash`. This is
   the invariant `test.py` measures as `query_hash` determinism.
 
-### E · Exhaustive retrieval — history server + paging  (`pubmed.PubMed`)
+### E · Exhaustive retrieval — history server, paging, and the 9,999 ceiling  (`pubmed.PubMed`)
 
 To pull *every* match with no silent cap, we use the E-utilities history server:
 one `esearch` stores the full result set server-side (`WebEnv` + `query_key`),
 then `efetch` pages through it.
 
-```text
-search(query):  esearch(usehistory=y, retmax=0) → {count, WebEnv, query_key, translation}
+> **NCBI's hard limit (found 2026-08-11 by a crash).** Quoting the efetch error:
+> *"'retstart' cannot be larger than 9998. For PubMed, ESearch can only retrieve
+> the first 9,999 records matching the query."* So the history walk **cannot** reach
+> record 10,000 — a search returning 35,089 hits died with `400 Bad Request` from
+> efetch partway through, and the PMID-list helper used by the evaluation silently
+> returned 9,999 of 35,089 with no error at all. Which was worse: a crash is
+> visible, a truncated "exhaustive" search is not.
+>
+> The fix is what NCBI's own EDirect does internally — **split the query until each
+> piece fits**. `date_partitions()` bisects the publication-date range, re-counting
+> each half, until every slice is ≤ 9,999; `fetch_query()` then walks each slice and
+> de-duplicates by PMID. For `"Microglia"[MeSH Terms]` (35,089 records) that is 7
+> slices from 1896 to 2028, all under the ceiling.
+>
+> Two details worth knowing. Slice counts can **overlap** — a record carrying both a
+> print and an electronic publication date matches two adjacent slices — so the
+> completeness check is the de-duplicated PMID count, not the sum of slice counts.
+> And every saved `protocol.json` now records the slices plus
+> `records_unaccounted` (`total − unique fetched`, which should be 0), so a
+> shortfall is auditable rather than invisible.
 
-fetch_all(WebEnv, query_key, count):
-    target = min(count, max_records?)          # cap only if caller sets one
-    for start in 0, 200, 400, … < target:      # batches of 200
-        xml = efetch(WebEnv, query_key, retstart=start, retmax=200)
-        articles += parse(xml)
-    return sort(articles, key=int(pmid))        # stable order regardless of NCBI paging
+```text
+fetch_query(query, max_records?):
+    total = count(query)
+    slices = [query]                     if total <= 9999
+             date_partitions(query)      otherwise   # bisect PDAT until each <= 9999
+    for slice in slices:
+        {count, WebEnv, query_key} = esearch(slice, usehistory=y)
+        for start in 0, 500, 1000, … < min(count, room):
+            articles += parse(efetch(WebEnv, query_key, retstart=start, retmax=500))
+    dedupe by pmid; sort by int(pmid)     # stable regardless of slicing or NCBI paging
+    missing = total - len(unique)         # 0 on an uncapped run, else surfaced
+
+date_partitions(query, limit=9999):      # deterministic, complete
+    rec(a, b): n = count(query AND [a:b][Date - Publication])
+               n == 0        → []
+               n <= limit    → [(a, b, n)]
+               a == b        → [(a, b, n, truncated)]     # a single day over 9,999
+               else          → rec(a, mid) + rec(mid+1, b)
 ```
 
 ```mermaid
@@ -614,11 +644,15 @@ column definitions in `data/determinism_v3.md`:
 
 | strategy | within-model | cross-model | heading Jaccard | block-count agr. | **PMID Jaccard** | median hit-count spread |
 |---|---|---|---|---|---|---|
-| `llm` / prompt v1 (the old prompt) | 0.57 | 0.14 | 0.25 | 0.62 | 0.26 | 51,605 |
+| `llm` / prompt v1 (the old prompt) | 0.57 | 0.14 | 0.25 | 0.62 | 0.27 | 51,605 |
 | `llm` / prompt v2 | 0.71 | 0.24 | 0.47 | 0.57 | 0.18 | 16,765 |
 | `hybrid`, model picks the synonyms | 0.75 | 0.52 | 0.74 | 0.76 | – | – |
 | `hybrid`, derived synonyms (**default**) | 0.90 | **0.76** | 0.95 | 0.76 | **0.68** | 348 |
-| `mesh_only` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0 |
+| `mesh_only` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00\* | 0 |
+
+\* `mesh_only` produces one query for everybody, so its overlap is 1.00 by
+construction — there are no pairs to measure. The PMID Jaccard column is measured on
+**complete** result sets (see the note on NCBI's 9,999-record ceiling below).
 
 Read it with the floor in mind: with 7 models a chance-level modal share is
 1/7 = **0.14**, which is exactly where `llm/v1` sits — the same place the original
