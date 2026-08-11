@@ -14,15 +14,22 @@ queries Crossref, OpenAlex, Europe PMC or Unpaywall today.
 ## How it works
 
 ```
-research question
-      │  candidates.candidate_slate() — deterministic MeSH lookup over the question
-      ▼
-numbered candidate slate  ──►  🤖 model SELECTS ids   (hybrid, the default)
-                          ──►  🤖 model PROPOSES freely (llm)
-                          ──►  no model at all         (mesh_only)
-      │
+                          research question
+                                  │
+      ┌───────────────────────────┼───────────────────────────┐
+      │ hybrid (default)          │ llm                       │ mesh_only
+      ▼                           ▼                           ▼
+candidate_slate()            🤖 model proposes           matched_spans()
+MeSH lookup over the           blocks + headings         every maximal MeSH
+question → numbered slate      from scratch              match in the question
+      ▼                           │                           │
+🤖 model SELECTS ids only         │                           │
+(cannot write vocabulary)         │                           │
+      └───────────────────────────┼───────────────────────────┘
+                                  │
       │  canonical.canonicalize_blocks() — exact-only resolution · subsumption
-      │  pruning · canonical ordering · facet closure
+      │  pruning · canonical ordering; hybrid also gets span grouping + facet
+      │  closure (candidates.py), which is where cross-model agreement comes from
       ▼
 MeSH explosion (tree numbers) + entry-term expansion + domain jargon
       │  deterministic query builder → Boolean query + sha256 hash

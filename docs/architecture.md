@@ -15,6 +15,10 @@ strategy, so a protocol still has to record the model and the strategy.
 
 ![Determinism results](../data/determinism_v3.png)
 
+New to MeSH vocabulary (DUI, entry term, tree number, explosion) or to the terms
+this document coins (slate, span group, facet closure)? The
+**[Glossary](#glossary)** defines every one of them with a real example.
+
 ```mermaid
 flowchart TD
     U(["🧑‍🔬 Researcher"]) -->|research question| FE["🖥️ Frontend<br/>vanilla JS + HTML"]
@@ -24,12 +28,14 @@ flowchart TD
         direction TB
         MAP["POST /api/map<br/>mode = hybrid | llm | mesh_only"]
         SLATE["candidates.candidate_slate()<br/>MeSH lookup over the question<br/><i>deterministic</i>"]
-        LLM{{"🤖 OpenRouter LLM<br/>temperature = 0<br/><i>proposes (llm) or<br/>selects from the slate (hybrid)</i>"}}
-        RES["canonical.canonicalize_blocks()<br/>exact-only resolution · subsumption<br/>pruning · canonical ordering"]
+        SPANS["candidates.mesh_only_blocks()<br/>one block per matched phrase<br/><i>no model</i>"]
+        LLM{{"🤖 OpenRouter LLM<br/>temperature = 0<br/><i>selects slate ids (hybrid)<br/>or proposes freely (llm)</i>"}}
+        RES["canonical.canonicalize_blocks()<br/>exact-only resolution · subsumption<br/>pruning · canonical ordering<br/>(hybrid: + span grouping, facet closure)"]
         AUG["augment free-text with<br/>domain-vocab synonyms"]
-        MAP --> SLATE --> LLM
-        MAP --> LLM
-        LLM -->|"blocks + headings<br/>or candidate ids (JSON)"| RES --> AUG
+        MAP -->|hybrid| SLATE --> LLM
+        MAP -->|llm| LLM
+        MAP -->|mesh_only| SPANS --> RES
+        LLM -->|"candidate ids<br/>or blocks + headings (JSON)"| RES --> AUG
     end
 
     %% ---------------- Step 2: EXPAND (preview) ----------------
@@ -100,11 +106,132 @@ flowchart TD
     classDef ui fill:#f3e8ff,stroke:#7d3c98,stroke-width:1.5px,color:#111;
 
     class LLM nondet;
-    class RES,AUG,EXPL,QB,HASH,PM,COMP,MAP,EXP,CNT,SR,DL,BUILD det;
+    class SLATE,SPANS,RES,AUG,EXPL,QB,HASH,PM,COMP,MAP,EXP,CNT,SR,DL,BUILD det;
     class IDX,VOCAB,SAVE,NT store;
     class NCBI ext;
     class U,FE ui;
 ```
+
+### The same flow in words
+
+Each numbered stage above, what it does, and what it guarantees:
+
+**① MAP — `POST /api/map` → `pipeline.build_async`.** Turns a question into concept
+blocks. The only stage a model touches.
+
+- `candidates.candidate_slate()` searches the **local** MeSH index for every phrase
+  the question contains — longest match first, plus singular/plural and hyphen
+  variants, hyphen-compound parts, reworded phrase matches, and each match's
+  immediate broader term. Output is a *numbered* list of real descriptors.
+- Depending on `mode`, the model then either **selects ids** from that list
+  (`hybrid`), **proposes** blocks and headings from scratch (`llm`), or is not
+  called at all (`mesh_only`, which makes one block per matched phrase).
+- `canonical.canonicalize_blocks()` resolves each heading **exactly** (no fuzzy
+  match reaches the query), drops headings a broader heading in the same block
+  already explodes over, and sorts blocks and terms into a canonical order.
+- In `hybrid`, two further deterministic rules apply: candidates from overlapping
+  question words are grouped into one OR block (`span_groups`), and naming any
+  member of a facet pulls in that facet's whole canonical vocabulary
+  (`group_closure`).
+- Domain-vocabulary synonyms matching the block's headings are attached.
+- **Guarantee:** every heading in the response exists verbatim in MeSH; anything
+  dropped is reported (unresolvable candidate, redundant heading, question phrase
+  absent from MeSH) rather than silently discarded.
+
+**② EXPAND — `POST /api/expand`.** Optional preview: shows a descriptor's full
+exploded subtree and synonym set before you commit to it. Pure index lookup.
+
+**③ COMPILE — `POST /api/compile` → `query_builder.compile_search`.** Concept blocks
+(as reviewed and edited by you) become one Boolean string.
+
+- With *strict* on, each block's free-text is re-derived from the MeSH index rather
+  than model prose, bounded by `STRICT_MAX_TERMS`.
+- Blocks are ANDed, terms inside a block ORed, inclusion filters wrapped with
+  `AND`, exclusions with `NOT`, everything de-duplicated case-insensitively.
+- **Guarantee:** byte-identical output for identical input, hashed with sha256 —
+  that hash is the reproducibility key recorded in the protocol.
+
+**④ COUNT — `POST /api/count`.** One `esearch` with `retmax=0`: how many hits, plus
+PubMed's own translation of the query and any warnings (e.g. quoted phrases it could
+not find). Cheap, so use it before committing to a full run.
+
+**⑤ SEARCH — `POST /api/search` → `pubmed.fetch_query`.** Retrieves every record.
+
+- Under 9,999 hits: one history-server walk (`esearch usehistory=y` → paged
+  `efetch`).
+- Above it: the query is split into publication-date slices (each ≤ 9,999) because
+  NCBI refuses `retstart > 9998`; slices are walked separately and de-duplicated by
+  PMID.
+- **Guarantee:** results sorted by PMID, so two runs of the same query produce
+  identical files; `records_unaccounted` states whether anything was missed.
+
+**⑥ EXPORT — `data/searches/<time>_<hash>/`.** `results.csv`, `results.jsonl`, and
+`protocol.json` (question, model, mode, strict flag, concepts, filters, query, hash,
+count, date slices). That folder *is* the reproducibility artifact.
+
+### A worked example
+
+`"Does optogenetic stimulation of the hippocampus improve memory consolidation in
+rodent models?"`, `hybrid` mode, `google/gemini-3.5-flash`, strict on — real output,
+not illustrative:
+
+**① The slate** — nine candidates, found without any model:
+
+| id | descriptor | DUI | relation | from the words |
+|---|---|---|---|---|
+| 1 | Cerebral Cortex | D002540 | broader | "hippocampus" |
+| 2 | Eutheria | D000073566 | broader | "rodent" |
+| 3 | Genetic Techniques | D005821 | broader | "optogenetic" |
+| 4 | **Hippocampus** | D006624 | exact | "hippocampus" |
+| 5 | Limbic System | D008032 | broader | "hippocampus" |
+| 6 | **Memory Consolidation** | D000069077 | exact | "memory consolidation" |
+| 7 | Memory, Long-Term | D057567 | broader | "memory consolidation" |
+| 8 | **Optogenetics** | D062308 | exact | "optogenetic" |
+| 9 | **Rodentia** | D012377 | exact | "rodent" |
+
+Unmatched phrases (free-text territory only): `stimulation`, `improve`.
+Span groups — the OR blocks, decided by the question's words, not the model:
+`{1,4,5}` from "hippocampus", `{2,9}` from "rodent", `{3,8}` from "optogenetic",
+`{6,7}` from "memory consolidation".
+
+**② The model's whole contribution** is choosing ids, and it said so:
+
+> *"Dropped broader candidates 1, 2, 3, 5, and 7 because exact matches (4, 6, 8, 9)
+> were available for all facets."*
+
+Note what it could not do: invent a heading, put `Optogenetics` and `Hippocampus`
+in the same OR block, or pick different synonyms inside a facet. Had it named only
+the broader `Limbic System` (id 5), closure would have replaced it with
+`Hippocampus` — the exact match from the same span.
+
+**③ The blocks**, after canonicalisation, with strict free-text counts:
+
+| slot | MeSH | free-text terms from the index |
+|---|---|---|
+| context | `Hippocampus` | 60 (`Ammon Horn`, `Cornu Ammonis`, `Subiculum`, … capped by `STRICT_MAX_TERMS`) |
+| outcome | `Memory Consolidation` | 9 |
+| intervention | `Optogenetics` | 12 |
+| population | `Rodentia` | 60 |
+
+**④ The compiled query** — 4 blocks, 145 terms, 5,500 characters,
+hash `a4dc7474caa9b4b4`, **71** PubMed hits:
+
+```
+("Hippocampus"[MeSH Terms] OR "Ammon Horn"[Title/Abstract] OR "Ammon's Horn"[Title/Abstract]
+ OR "Ammons Horn"[Title/Abstract] OR "Area Dentata"[Title/Abstract] OR … )
+AND ("Memory Consolidation"[MeSH Terms] OR … )
+AND ("Optogenetics"[MeSH Terms] OR … )
+AND ("Rodentia"[MeSH Terms] OR … )
+```
+
+`"Hippocampus"[MeSH Terms]` alone already retrieves the 7 descendants PubMed has
+indexed (`Dentate Gyrus`, `CA1 Region, Hippocampal`, `Schaffer Collaterals`, …) —
+the `[Title/Abstract]` terms are there for records not yet MeSH-indexed.
+
+**The punchline:** `mesh_only` on the same question compiles to the **same hash**,
+`a4dc7474caa9b4b4`. When the question names its facets plainly, the model's
+judgement and the deterministic baseline agree exactly — and when they don't, the
+difference is a facet decision you can see and review, not a wording accident.
 
 ## The determinism boundary
 
@@ -300,8 +427,9 @@ flowchart TD
 ### B · Candidate resolution ladder  (`MeshIndex.search`)
 
 Turns a free-text LLM suggestion into real descriptors via a fixed-priority
-cascade; stops widening once it has enough. This is both the fuzzy matcher and
-the hallucination filter.
+cascade; stops widening once it has enough. **Since 2026-08-10 tier 3 is
+suggestions-only** — it populates the UI's picker for a human, while the query
+itself is built by `canonical.resolve_strict`, which stops after tier 2.
 
 ```text
 resolve(text, limit=8):
@@ -402,7 +530,7 @@ flowchart TD
 
 - `dedupe` keeps first occurrence, compares on `strip().lower()` → stable set,
   stable order. Same inputs ⇒ byte-identical `query` ⇒ identical `hash`. This is
-  the invariant `test.py` measures as `query_hash` determinism.
+  the invariant `eval/determinism_eval.py` measures as `query_hash` determinism.
 
 ### E · Exhaustive retrieval — history server, paging, and the 9,999 ceiling  (`pubmed.PubMed`)
 
@@ -510,7 +638,7 @@ flowchart TD
 
 ## Reproducibility in practice: measured & fixed
 
-We built `test.py` to *measure* determinism instead of assuming it: for each
+We built a harness (originally `test.py`, now `eval/determinism_eval.py`) to *measure* determinism instead of assuming it: for each
 `(model, query)` it runs the whole pipeline N times and scores agreement (see
 algorithm F). Running it exposed that the naive design was essentially
 non-deterministic, and drove three fixes.
@@ -818,6 +946,116 @@ MeSH lacks still reach the query.
   strings can retrieve the same corpus.
 - Therefore `protocol.json` records **question + model + mode + strict**, not just
   the query hash.
+
+## Glossary
+
+Every example below is real output from this repo, using `Hippocampus` as the
+running case.
+
+### MeSH vocabulary (NLM's terms)
+
+- **Descriptor / heading** — the unit of MeSH: one concept with one official name.
+  `Hippocampus` is a descriptor. Its name is what PubMed matches when you write
+  `"Hippocampus"[MeSH Terms]`.
+- **DUI (Descriptor Unique Identifier)** — MeSH's stable id for a descriptor, always
+  `D` + digits: `Hippocampus` is **`D006624`**. Names get revised between MeSH
+  editions; DUIs do not, which is why this codebase resolves to a DUI first and
+  treats the label as a rendering of it. The `descriptor` table is keyed on it.
+- **Entry term** — a synonym or lexical variant of a descriptor. `D006624` carries
+  17: `Ammon Horn`, `Ammon's Horn`, `Cornu Ammonis`, `Hippocampal Formation`,
+  `Subiculum`, `Hippocampus Proper`, plus inverted forms like
+  `Formation, Hippocampal`. These become the `[Title/Abstract]` half of a block —
+  they are how the search reaches papers PubMed has not indexed yet.
+- **Tree number** — the descriptor's position in the MeSH hierarchy, as a dotted
+  path. `Hippocampus` has two: `A08.186.211.180.405` and
+  `A08.186.211.200.885.287.500.345` (a descriptor can sit in several places at
+  once). The letter is the top-level category — `A` anatomy, `C` diseases, `D`
+  chemicals, `G` phenomena.
+- **Explosion** — retrieving a heading *plus everything beneath it in the tree*.
+  Because the hierarchy is encoded in the dotted path, descendants are exactly the
+  rows whose tree number is prefixed by the parent's, so this is a string-prefix
+  query, not a graph traversal. `Hippocampus` explodes to 8 descriptors including
+  `Dentate Gyrus`, `CA1 Region, Hippocampal` and `Schaffer Collaterals`.
+- **Parents / broader terms** — one tree level up: `Hippocampus` → `Cerebral Cortex`,
+  `Limbic System`.
+- **`[MeSH Terms]`** — PubMed's field tag for a heading search. It **auto-explodes**:
+  the descendants come for free, server-side, at zero query length. This is why
+  listing `Hippocampus` *and* `Dentate Gyrus` in one block is pure redundancy —
+  and why this tool prunes it.
+- **`[MeSH:NoExp]`** — the same search with explosion suppressed (this tool emits it
+  when you untick *Explode* on a block).
+- **`[Title/Abstract]`** — free-text search of title and abstract only. Catches
+  records that are too new to be MeSH-indexed, at the cost of precision.
+- **`[Date - Publication]`** (PDAT) — the field the retrieval layer slices on to get
+  past NCBI's 9,999-record ceiling.
+- **PMID** — PubMed's record id. The de-duplication key and sort key for results.
+
+### Terms this design introduces
+
+- **Facet / concept block** — one requirement the question makes, rendered as one
+  parenthesised group: MeSH headings ORed with free-text terms. Blocks are ANDed, so
+  every block must be satisfied. "Hippocampus" is one facet of the example question;
+  "rodent models" is another.
+- **Slot** — the facet's PICO-ish label (`population`, `intervention`, `comparator`,
+  `outcome`, `method`, `context`). Useful for display and review. Deliberately *not*
+  used to order or merge blocks: models label identical content with different slots,
+  so it is the least reliable field in the response.
+- **Candidate slate** — the numbered list of real MeSH descriptors found in the
+  question by `candidates.candidate_slate()`, before any model sees it. In `hybrid`
+  mode this is the model's entire universe: an id outside it is discarded, so
+  hallucinated vocabulary is not filtered out — it is unrepresentable.
+- **Relation** — how a candidate was found. **`exact`**: the question's own words
+  matched a heading or entry term (`hippocampus` → `Hippocampus`). **`phrase`**: MeSH
+  words the same idea differently ("single-cell RNA sequencing" →
+  `Single-Cell Gene Expression Analysis`, via its entry term `Single-Cell RNA-Seq`).
+  **`broader`**: one tree level above an exact match (`Hippocampus` →
+  `Limbic System`).
+- **Span group** — the set of candidates whose source words in the question overlap.
+  These are alternatives for one facet, so they become one OR block; candidates from
+  disjoint words stay ANDed. This takes the grouping decision away from the model,
+  which is the decision it is least consistent about.
+- **Facet closure** — given that the model chose a facet, the *vocabulary* of that
+  facet is derived rather than chosen: every `exact` candidate in the group, plus
+  `phrase` candidates at least as well-supported as the exact one. So naming
+  `Limbic System` yields `Hippocampus`, and naming any one of three near-synonymous
+  CRISPR descriptors yields all three.
+- **Subsumption pruning** — dropping a heading that another heading in the same block
+  already explodes over. `Hippocampus + CA1 Region + Dentate Gyrus` → `Hippocampus`:
+  identical retrieval, one canonical string.
+- **Strict mode** — derive each block's free-text from the MeSH index instead of the
+  model's prose (the app's *Strict MeSH synonyms* checkbox, on by default). It is the
+  difference between a query that is a function of your selections and one that is a
+  function of which model you called.
+- **Query hash** — `sha256(query)[:16]`, e.g. `a4dc7474caa9b4b4`. Two searches with
+  the same hash are the same search, byte for byte.
+
+### Evaluation vocabulary
+
+- **within-model determinism** — one model, one question, N runs: the share of runs
+  producing the byte-identical query. Must be measured with the map cache **off**;
+  with it on the answer is 1.00 by construction.
+- **cross-model determinism** — different models, same question: the share producing
+  the byte-identical query (the *modal share* — how often the single most common
+  answer recurs). **Chance level is 1/number-of-models**, so 0.14 at seven models and
+  0.09 at eleven; the number is meaningless without that denominator and does not
+  compare across runs of different size.
+- **Jaccard index** — overlap of two sets: |A∩B| / |A∪B|. Applied to chosen MeSH
+  headings (**heading Jaccard** — did the models agree on substance, ignoring
+  formatting?) and to the PMIDs PubMed returns (**PMID Jaccard** — did the queries
+  retrieve the same papers?). 1.00 = identical.
+- **hit-count spread** — largest minus smallest PubMed hit count across models. An
+  absolute-scale companion to PMID Jaccard: a spread of 51,605 means one model's
+  query was wildly broader than another's.
+
+### NCBI E-utilities
+
+- **`esearch` / `efetch`** — search for ids / fetch records.
+- **`WebEnv` + `query_key`** — the history server's handle to a stored result set, so
+  `efetch` can page through it without resending the query.
+- **`retstart` / `retmax`** — paging offset and page size. `retstart > 9998` is
+  refused for PubMed, which is the ceiling the date-slicing exists to work around.
+- **EDirect** — NCBI's own command-line tools, which batch large PubMed result sets
+  automatically. `date_partitions()` is this tool's equivalent of that logic.
 
 ## Legend
 
