@@ -1,0 +1,40 @@
+{
+  "model": "ollama/llama3.2:1b",
+  "runs": 3,
+  "facet_k": 3,
+  "timestamp": "2026-09-10 01:24:20",
+  "results": [
+    {
+      "mode": "llm",
+      "question": "What is the effect of RNA sequencing on hippocampal neurons in Alzheimer Disease patients?",
+      "determinism": 0.667,
+      "distinct": 2,
+      "n": 3,
+      "failures": 0
+    },
+    {
+      "mode": "closure",
+      "question": "What is the effect of RNA sequencing on hippocampal neurons in Alzheimer Disease patients?",
+      "determinism": 1.0,
+      "distinct": 1,
+      "n": 3,
+      "failures": 0
+    },
+    {
+      "mode": "llm",
+      "question": "Does metformin reduce cardiovascular mortality in patients with type 2 diabetes?",
+      "determinism": 1.0,
+      "distinct": 1,
+      "n": 3,
+      "failures": 0
+    },
+    {
+      "mode": "closure",
+      "question": "Does metformin reduce cardiovascular mortality in patients with type 2 diabetes?",
+      "determinism": 0.667,
+      "distinct": 1,
+      "n": 3,
+      "failures": 1
+    }
+  ]
+}

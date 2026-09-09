@@ -24,10 +24,13 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import query_builder
+from . import europepmc, facet_pipeline, query_builder
 from .domain_vocab import get_vocab
+from .europepmc import EuropePMC
+from .dedupe import merge_sources
 from .mesh_index import get_index
 from .openrouter_client import OpenRouterError, map_question, map_question_async
+from .facets import FacetLLMError
 from .pubmed import PubMed, to_csv, to_jsonl
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -46,6 +49,11 @@ class MapReq(BaseModel):
     model: str | None = None
     extra_context: str = ""
     api_key: str | None = None
+    mode: str = "llm"          # "llm" (legacy single-shot proposal) | "closure"
+                                # (self-consistency facet voting + deterministic
+                                # MeSH closure -- see facets.py / closure.py)
+    facet_runs: int = 3        # k for self-consistency voting in "closure" mode
+    min_agreement: float = 0.5
 
 
 class ExpandReq(BaseModel):
@@ -78,6 +86,20 @@ class CountReq(BaseModel):
 
 class SearchReq(BaseModel):
     query: str
+    max_records: int | None = 20000
+    api_key: str | None = None
+    email: str | None = None
+    protocol: dict = {}
+
+
+class SearchMultiReq(BaseModel):
+    """Multi-database exhaustive search: compiles the same concepts/filters
+    for both PubMed and Europe PMC, fetches both, deduplicates, and reports
+    PRISMA-style identification counts. See dedupe.py / europepmc.py."""
+    concepts: list[dict]
+    filters: dict = {}
+    strict: bool = False
+    sources: list[str] = ["pubmed", "europepmc"]
     max_records: int | None = 20000
     api_key: str | None = None
     email: str | None = None
@@ -215,6 +237,20 @@ def resolve_concepts(result: dict, domains: list[str]) -> dict:
 async def api_map(req: MapReq):
     if not req.question.strip():
         raise HTTPException(400, "question is required")
+
+    if req.mode == "closure":
+        ix = get_index()
+        try:
+            build = await facet_pipeline.build_async(
+                req.question, ix, model=req.model, api_key=req.api_key,
+                k=req.facet_runs, min_agreement=req.min_agreement,
+            )
+        except FacetLLMError as e:
+            raise HTTPException(502, str(e))
+        return {"concepts": build["concepts"], "notes": build["notes"],
+                "model": build["model"], "mode": "closure",
+                "segmentation": build["segmentation"]}
+
     try:
         result = await map_question_async(
             req.question, domains=req.domains, model=req.model,
@@ -222,7 +258,9 @@ async def api_map(req: MapReq):
         )
     except OpenRouterError as e:
         raise HTTPException(502, str(e))
-    return resolve_concepts(result, req.domains)
+    out = resolve_concepts(result, req.domains)
+    out["mode"] = "llm"
+    return out
 
 
 @app.post("/api/expand")
@@ -314,6 +352,69 @@ def api_search(req: SearchReq):
         "folder": folder.name,
         "articles": rows,
     }
+
+
+@app.post("/api/search_multi")
+def api_search_multi(req: SearchMultiReq):
+    """Exhaustive multi-database search (PubMed + Europe PMC by default),
+    deduplicated, with PRISMA identification counts in the saved protocol."""
+    concepts_dicts = _strict_concepts(req.concepts) if req.strict else req.concepts
+    concepts = [query_builder.Concept.from_dict(c) for c in concepts_dicts]
+    filters = query_builder.Filters.from_dict(req.filters)
+    try:
+        pm_query = query_builder.build_query(concepts, filters)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    pm_hash = query_builder.query_hash(pm_query)
+
+    named_results: list[tuple[str, list]] = []
+    per_source: dict[str, dict] = {}
+
+    if "pubmed" in req.sources:
+        pm = _pubmed(req.api_key, req.email)
+        initial = pm.search(pm_query)
+        fetched = ({"articles": [], "count": 0, "fetched": 0, "slices": [], "capped": False,
+                   "missing": 0} if initial["count"] == 0
+                  else pm.fetch_query(pm_query, max_records=req.max_records))
+        named_results.append(("pubmed", fetched["articles"]))
+        per_source["pubmed"] = {"query": pm_query, "hash": pm_hash,
+                                "translation": initial["translation"],
+                                "count": fetched["count"], "fetched": fetched["fetched"],
+                                "capped": fetched["capped"], "missing": fetched["missing"]}
+
+    if "europepmc" in req.sources:
+        try:
+            epmc_query = europepmc.translate_query(concepts, filters)
+        except ValueError:
+            epmc_query = None
+        if epmc_query:
+            epmc = EuropePMC(email=req.email or os.environ.get("NCBI_EMAIL", ""))
+            epmc_fetched = epmc.fetch_all(epmc_query, max_records=req.max_records)
+            named_results.append(("europepmc", epmc_fetched["articles"]))
+            per_source["europepmc"] = {"query": epmc_query,
+                                       "count": epmc_fetched["count"],
+                                       "fetched": epmc_fetched["fetched"],
+                                       "capped": epmc_fetched["capped"]}
+
+    merged = merge_sources(named_results)
+    rows = [a.to_row() for a in merged.articles]
+
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    folder = SEARCH_DIR / f"{stamp}_{pm_hash}_multi"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "results.csv").write_text(to_csv(merged.articles), encoding="utf-8")
+    (folder / "results.jsonl").write_text(to_jsonl(merged.articles), encoding="utf-8")
+    protocol = {
+        **req.protocol,
+        "sources": per_source,
+        "prisma": merged.prisma_counts(),
+        "matched_by_sample": merged.matched_by[:50],
+        "timestamp": stamp,
+    }
+    (folder / "protocol.json").write_text(json.dumps(protocol, indent=2), encoding="utf-8")
+
+    return {"prisma": merged.prisma_counts(), "sources": per_source,
+            "folder": folder.name, "articles": rows}
 
 
 @app.get("/api/download")

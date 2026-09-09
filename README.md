@@ -1,10 +1,21 @@
 # Deterministic Exhaustive PubMed Search
 
-A web tool for **reproducible, exhaustive** literature searches over PubMed. You
-describe a research question; an LLM (via OpenRouter) proposes a search
-structure; everything after that is deterministic and auditable. The result is a
-single Boolean PubMed query (with a content hash), every matching record, and a
-saved protocol you can re-run to get the same set.
+A web tool for **reproducible, exhaustive** literature searches. You describe a
+research question; a search structure is proposed; everything after that is
+deterministic and auditable. The result is a single Boolean query (with a
+content hash) per database, every matching record across databases
+deduplicated, and a saved protocol you can re-run to get the same set.
+
+Two strategies are available side by side (pick per search): `llm` asks a
+model to freely propose MeSH headings and free-text (fast, higher variance);
+`closure` asks a model only to mark facet boundaries in the question — voted
+across several samples by self-consistency — then resolves vocabulary
+afterwards as a pure function of the local MeSH index, so the model never
+touches MeSH at all. See **Strategy: `closure` mode** below for why that
+ordering matters and how to measure it yourself rather than take it on faith.
+Retrieval also isn't PubMed-only: `/api/search_multi` additionally queries
+Europe PMC and deduplicates across both (**Strategy: multi-database
+exhaustiveness**).
 
 ## How it works
 
@@ -87,6 +98,60 @@ Large PubMed searches are automatically partitioned by publication date before
 fetching, avoiding PubMed's 9,999-record history-server ceiling. The saved
 `protocol.json` records each partition and surfaces any missing records.
 
+## Strategy: `closure` mode (self-consistency facet voting)
+
+`mode: "llm"` (the default above) asks the model to freely propose MeSH
+headings and free-text — a high-entropy generation task, so two runs (or two
+models) can reasonably disagree on vocabulary.
+
+`mode: "closure"` (`backend/facets.py` + `backend/closure.py`) inverts what
+the model is asked to do. The model is never shown MeSH at all; it is asked
+only to mark WHERE each PICO-style concept sits in the question text (a much
+lower-entropy task), and that call is sampled **k times** and voted by
+self-consistency — a span only survives if a majority of the k runs agree on
+it (`facets._cluster_and_vote`). Vocabulary is then derived afterwards, as a
+pure function of (question, span, local MeSH index): every exact MeSH match
+inside a voted span is kept, subject to subsumption pruning
+(`closure.prune_subsumed`) so a broader heading's auto-explosion isn't
+duplicated by also keeping a narrower one. No model ever sees or chooses a
+MeSH heading, so nothing downstream of voting can vary run-to-run.
+
+Falls back to a zero-network heuristic segmenter (`facets.heuristic_facets`,
+conjunction/punctuation chunking) if no LLM key is configured for the chosen
+model — a model-independent path the same way `mesh_only` served that
+purpose upstream, just reached differently. Call it via
+`{"mode": "closure", "facet_runs": 3, "min_agreement": 0.5}` on `/api/map`.
+
+Measure it yourself before trusting either mode's number:
+`.venv/Scripts/python.exe eval/eval_closure.py --model ollama/llama3.2:1b --runs 5`
+runs both `llm` and `closure` against the same live model and scores
+query-hash determinism across the reruns (same metric `test.py` already uses:
+size of the largest identical-hash group ÷ N). No API key required if you
+point `--model` at a local Ollama model.
+
+## Strategy: multi-database exhaustiveness (`/api/search_multi`)
+
+Scope was PubMed-only. `backend/europepmc.py` translates the same compiled
+concept blocks into Europe PMC's query syntax (`MESH:"..."`, `TITLE:`/`ABSTRACT:`)
+and fetches from the free, keyless Europe PMC REST API via cursor pagination
+(no 9,999-record ceiling, so no date-bisection needed on that side).
+`backend/dedupe.py` merges the two result sets — DOI match, then PMID, then
+normalized title+year as a fallback — and reports PRISMA-style identification
+counts (`identified_by_source`, `duplicates_removed`, `unique_records`) into
+`protocol.json` alongside the usual query/hash.
+
+**Measured, not assumed:** live-tested against a MeSH-scoped, week-bounded
+query, Europe PMC's own MeSH-tagged coverage for that window was a small
+fraction of PubMed's (worth knowing before treating it as a full second
+opinion) — but of the Europe PMC records fetched, roughly half were
+DOI-matched duplicates of PubMed records once **both sides were fetched
+exhaustively**. That last qualifier matters: comparing two sources each
+capped at the same `max_records` is close to meaningless, since PubMed's and
+Europe PMC's default result ordering differ, so two same-sized capped samples
+can show near-zero overlap even when the full sets overlap substantially.
+`per_source[...]["capped"]` in the `/api/search_multi` response tells you
+which situation you're in — see the caveat documented in `dedupe.py`.
+
 ## Layout
 
 ```
@@ -94,16 +159,29 @@ backend/
   build_index.py      MeSH .nt → SQLite (one-time)
   mesh_index.py       label lookup · tree explosion · entry-term expansion
   domain_vocab.py     domain jargon clusters (data/domain_terms.json)
-  openrouter_client.py  question → proposed concepts (structure only)
+  openrouter_client.py  "llm" mode: question → freely proposed concepts
+  facets.py           "closure" mode: question → voted facet spans (self-consistency)
+  closure.py          "closure" mode: facet span → deterministic MeSH closure
+  facet_pipeline.py   wires facets.py + closure.py into the app's concept shape
+  europepmc.py        Europe PMC query translation + cursor-paginated retrieval
+  dedupe.py           cross-database merge (DOI → PMID → title+year) + PRISMA counts
   query_builder.py    deterministic Boolean compile + inclusion/exclusion + hash
   pubmed.py           E-utilities esearch/efetch + CSV/JSONL export
   app.py              FastAPI + static UI
 frontend/             index.html · app.js · style.css  (no build step)
+eval/
+  eval_closure.py     live determinism measurement: llm vs closure, same model
 data/
   domain_terms.json   editable domain vocabularies
   mesh.sqlite         generated index
   searches/           saved runs (results + protocol.json)
+tests/
+  test_quality_features.py   portfolio + date-scope regression checks
+  test_closure_pipeline.py   facets/closure/dedupe/europepmc regression checks
 ```
+
+Run `.venv/Scripts/python.exe -m unittest discover -s tests` before committing a
+change to `closure.py`, `facets.py`, or `dedupe.py` — no network required.
 
 ## Extending domain coverage
 
@@ -123,4 +201,12 @@ appear as chips in the UI. Each cluster is
 - LLM screening of abstracts against inclusion/exclusion is intentionally *not*
   wired in (you chose MeSH-mapping only). The criteria here are deterministic
   PubMed filters. Abstract-level screening could be added as a later stage.
-```
+- **Fixed:** `pubmed.py`'s `fetch_query` used to silently `continue` past a
+  date slice with more than 9,999 hits in a single day, discarding every
+  record from it with no signal. It now still fetches up to the ceiling for
+  that slice and reports the shortfall via `missing`/`any_slice_truncated`,
+  matching how an over-`max_records` cap is already reported.
+- **Europe PMC's `LANG:` filter is not wired to PubMed's `[la]` language
+  names** — pass Europe PMC-style codes if you need that filter honoured on
+  the multi-database path; publication-type and species filters are not
+  translated to Europe PMC syntax at all yet (see `europepmc.py`).

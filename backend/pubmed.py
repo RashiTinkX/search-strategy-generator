@@ -171,17 +171,30 @@ class PubMed:
 
     def fetch_query(self, query: str, max_records: int | None = None,
                     batch: int = 200, progress=None) -> dict:
-        """Fetch a query completely, splitting broad searches at PubMed's ceiling."""
+        """
+        Fetch a query completely, splitting broad searches at PubMed's ceiling.
+
+        A `truncated` slice (a single calendar day with more than HISTORY_MAX
+        hits -- rare, but possible for very broad topics) is NOT skipped: an
+        earlier version of this method did `continue` here, which silently
+        discarded every record from that day rather than fetching any of
+        them. We still fetch up to HISTORY_MAX records from a truncated
+        slice and let the `missing` count in the return value report the
+        shortfall, the same way an over-`max_records` cap is already
+        reported -- a caller can see it happened instead of getting a
+        quietly incomplete result set.
+        """
         total = self.count(query)
         slices = ([{"from": "", "to": "", "count": total, "query": query, "truncated": False}]
                   if total <= HISTORY_MAX else self.date_partitions(query))
         articles: list[Article] = []
         seen: set[str] = set()
+        any_truncated = False
         for sl in slices:
             if max_records is not None and len(articles) >= max_records:
                 break
             if sl["truncated"]:
-                continue
+                any_truncated = True
             result = self.search(sl["query"])
             room = None if max_records is None else max_records - len(articles)
             for article in self.fetch_all(result["webenv"], result["query_key"], result["count"],
@@ -192,7 +205,7 @@ class PubMed:
         articles.sort(key=lambda a: int(a.pmid) if a.pmid.isdigit() else 0)
         capped = max_records is not None and total > max_records
         return {"articles": articles, "count": total, "fetched": len(articles),
-                "slices": slices, "capped": capped,
+                "slices": slices, "capped": capped, "any_slice_truncated": any_truncated,
                 "missing": 0 if capped else max(0, total - len(articles))}
 
     # ---- fetch --------------------------------------------------------
