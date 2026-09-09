@@ -1,10 +1,10 @@
 # Deterministic Exhaustive PubMed Search
 
-A web tool for **reproducible, exhaustive** literature searches. You describe a
-research question; a search structure is proposed; everything after that is
-deterministic and auditable. The result is a single Boolean query (with a
-content hash) per database, every matching record across databases
-deduplicated, and a saved protocol you can re-run to get the same set.
+A web tool for **reproducible, exhaustive** literature searches over PubMed. You
+describe a research question; a search structure is proposed; everything after
+that is deterministic and auditable. The result is a single Boolean PubMed
+query (with a content hash), every matching record, and a saved protocol you
+can re-run to get the same set.
 
 Two strategies are available side by side (pick per search): `llm` asks a
 model to freely propose MeSH headings and free-text (fast, higher variance);
@@ -13,9 +13,6 @@ across several samples by self-consistency — then resolves vocabulary
 afterwards as a pure function of the local MeSH index, so the model never
 touches MeSH at all. See **Strategy: `closure` mode** below for why that
 ordering matters and how to measure it yourself rather than take it on faith.
-Retrieval also isn't PubMed-only: `/api/search_multi` additionally queries
-Europe PMC and deduplicates across both (**Strategy: multi-database
-exhaustiveness**).
 
 ## How it works
 
@@ -129,29 +126,6 @@ query-hash determinism across the reruns (same metric `test.py` already uses:
 size of the largest identical-hash group ÷ N). No API key required if you
 point `--model` at a local Ollama model.
 
-## Strategy: multi-database exhaustiveness (`/api/search_multi`)
-
-Scope was PubMed-only. `backend/europepmc.py` translates the same compiled
-concept blocks into Europe PMC's query syntax (`MESH:"..."`, `TITLE:`/`ABSTRACT:`)
-and fetches from the free, keyless Europe PMC REST API via cursor pagination
-(no 9,999-record ceiling, so no date-bisection needed on that side).
-`backend/dedupe.py` merges the two result sets — DOI match, then PMID, then
-normalized title+year as a fallback — and reports PRISMA-style identification
-counts (`identified_by_source`, `duplicates_removed`, `unique_records`) into
-`protocol.json` alongside the usual query/hash.
-
-**Measured, not assumed:** live-tested against a MeSH-scoped, week-bounded
-query, Europe PMC's own MeSH-tagged coverage for that window was a small
-fraction of PubMed's (worth knowing before treating it as a full second
-opinion) — but of the Europe PMC records fetched, roughly half were
-DOI-matched duplicates of PubMed records once **both sides were fetched
-exhaustively**. That last qualifier matters: comparing two sources each
-capped at the same `max_records` is close to meaningless, since PubMed's and
-Europe PMC's default result ordering differ, so two same-sized capped samples
-can show near-zero overlap even when the full sets overlap substantially.
-`per_source[...]["capped"]` in the `/api/search_multi` response tells you
-which situation you're in — see the caveat documented in `dedupe.py`.
-
 ## Layout
 
 ```
@@ -163,8 +137,6 @@ backend/
   facets.py           "closure" mode: question → voted facet spans (self-consistency)
   closure.py          "closure" mode: facet span → deterministic MeSH closure
   facet_pipeline.py   wires facets.py + closure.py into the app's concept shape
-  europepmc.py        Europe PMC query translation + cursor-paginated retrieval
-  dedupe.py           cross-database merge (DOI → PMID → title+year) + PRISMA counts
   query_builder.py    deterministic Boolean compile + inclusion/exclusion + hash
   pubmed.py           E-utilities esearch/efetch + CSV/JSONL export
   app.py              FastAPI + static UI
@@ -177,11 +149,11 @@ data/
   searches/           saved runs (results + protocol.json)
 tests/
   test_quality_features.py   portfolio + date-scope regression checks
-  test_closure_pipeline.py   facets/closure/dedupe/europepmc regression checks
+  test_closure_pipeline.py   facets/closure regression checks
 ```
 
 Run `.venv/Scripts/python.exe -m unittest discover -s tests` before committing a
-change to `closure.py`, `facets.py`, or `dedupe.py` — no network required.
+change to `closure.py` or `facets.py` — no network required.
 
 ## Extending domain coverage
 
@@ -206,7 +178,20 @@ appear as chips in the UI. Each cluster is
   record from it with no signal. It now still fetches up to the ceiling for
   that slice and reports the shortfall via `missing`/`any_slice_truncated`,
   matching how an over-`max_records` cap is already reported.
-- **Europe PMC's `LANG:` filter is not wired to PubMed's `[la]` language
-  names** — pass Europe PMC-style codes if you need that filter honoured on
-  the multi-database path; publication-type and species filters are not
-  translated to Europe PMC syntax at all yet (see `europepmc.py`).
+- **Scope is deliberately PubMed only.** A multi-database (Europe PMC)
+  extension was prototyped and measured, then dropped to keep this tool
+  focused; see git history if you want to revisit it.
+- **Fixed: `closure` mode's exhaustiveness used to be silently bounded by
+  facet segmentation.** `closure.py` resolves every exact MeSH match inside a
+  facet span it is given, but a question phrase that never landed inside any
+  voted facet span never reached the MeSH matcher — with no signal that it
+  happened. `facet_pipeline.coverage_gaps()` now detects any contiguous,
+  search-worthy stretch of the question outside every voted span, and
+  `resolve_coverage_gaps()` runs the same deterministic closure over it and
+  appends the result as an extra, clearly-labeled block (visible in
+  `coverage_gaps` in the `/api/map` response and tagged in each such block's
+  `rationale`) instead of dropping it. See `tests/test_closure_pipeline.py::CoverageGapTests`.
+- **Still open:** no stemming/morphological normalization anywhere in
+  `closure.py` — an adjectival form ("hippocampal") will not resolve to its
+  noun-form MeSH heading ("Hippocampus") unless MeSH's own entry-term table
+  happens to list it. Confirmed live; not yet fixed.

@@ -1,6 +1,6 @@
 """
-No-network regression checks for the facet/closure/multi-source pipeline
-(facets.py, closure.py, dedupe.py, europepmc.py's pure query translation).
+No-network regression checks for the facet/closure pipeline (facets.py,
+closure.py, facet_pipeline.py).
 
 Mirrors the style of test_quality_features.py: fast, deterministic, no API
 keys required. closure.py tests use the real local MeSH index (data/mesh.sqlite)
@@ -10,9 +10,8 @@ from __future__ import annotations
 
 import unittest
 
-from backend import closure, dedupe, europepmc, facets, query_builder
+from backend import closure, facet_pipeline, facets
 from backend.mesh_index import get_index
-from backend.pubmed import Article
 
 
 class HeuristicFacetTests(unittest.TestCase):
@@ -93,43 +92,57 @@ class ClosureTests(unittest.TestCase):
             self.assertEqual(first["freetext"], again["freetext"])
 
 
-class DedupeTests(unittest.TestCase):
-    def test_doi_match_normalizes_prefix_and_case(self):
-        a = Article(pmid="1", doi="10.1/ABC", title="T", year="2020")
-        b = Article(pmid="", doi="https://doi.org/10.1/abc", title="Different", year="2020")
-        merged = dedupe.merge_sources([("pubmed", [a]), ("europepmc", [b])])
-        self.assertEqual(merged.prisma_counts()["unique_records"], 1)
-        self.assertEqual(merged.duplicates_removed, 1)
-        self.assertEqual(merged.matched_by[0]["rule"], "doi")
+class CoverageGapTests(unittest.TestCase):
+    """Regression tests for the segmentation-coverage gap: closure.py is only
+    as exhaustive as the union of facet spans it's given, so a phrase that
+    never lands in any voted facet must be detected, not silently lost."""
 
-    def test_title_year_fallback_when_no_doi_or_pmid(self):
-        a = Article(pmid="", doi="", title="A Study of Things!", year="2019")
-        b = Article(pmid="", doi="", title="a study of things", year="2019")
-        c = Article(pmid="", doi="", title="a study of things", year="2020")  # different year
-        merged = dedupe.merge_sources([("s1", [a]), ("s2", [b, c])])
-        self.assertEqual(merged.prisma_counts()["unique_records"], 2)
+    def setUp(self):
+        self.ix = get_index()
 
-    def test_no_false_merge_across_unrelated_records(self):
-        a = Article(pmid="1", doi="10.1/x", title="First", year="2020")
-        b = Article(pmid="2", doi="10.1/y", title="Second", year="2021")
-        merged = dedupe.merge_sources([("pubmed", [a]), ("europepmc", [b])])
-        self.assertEqual(merged.duplicates_removed, 0)
-        self.assertEqual(merged.prisma_counts()["unique_records"], 2)
+    def test_detects_text_outside_every_facet(self):
+        q = "Effect of RNA sequencing in Alzheimer Disease"
+        toks = closure.tokenize(q)
+        self.assertEqual(toks[2:4], ["RNA", "sequencing"])
+        voted = [{"name": "RNA sequencing", "role": "method", "start": 2, "end": 3}]
+        gaps = facet_pipeline.coverage_gaps(q, voted)
+        self.assertEqual(len(gaps), 1)
+        phrase = " ".join(toks[gaps[0]["start"]:gaps[0]["end"] + 1])
+        self.assertIn("Alzheimer Disease", phrase)
 
+    def test_fully_covered_question_has_no_gaps(self):
+        q = "RNA sequencing of hippocampal neurons"
+        toks = closure.tokenize(q)
+        voted = [{"name": q, "role": "other", "start": 0, "end": len(toks) - 1}]
+        self.assertEqual(facet_pipeline.coverage_gaps(q, voted), [])
 
-class EuropePMCTranslateTests(unittest.TestCase):
-    def test_translate_is_deterministic_and_covers_filters(self):
-        concepts = [query_builder.Concept("c", mesh=["Alzheimer Disease"], freetext=["AD"])]
-        filters = query_builder.Filters(date_from="2020", date_to="2021")
-        q1 = europepmc.translate_query(concepts, filters)
-        q2 = europepmc.translate_query(concepts, filters)
-        self.assertEqual(q1, q2)
-        self.assertIn('MESH:"Alzheimer Disease"', q1)
-        self.assertIn("FIRST_PDATE:[2020 TO 2021]", q1)
+    def test_gap_of_only_stopwords_is_not_reported(self):
+        q = "RNA sequencing of the hippocampal neurons"
+        toks = closure.tokenize(q)
+        # cover everything except "of the" in the middle -- not worth a gap
+        voted = [{"start": 0, "end": 1}, {"start": 4, "end": 5}]
+        gaps = facet_pipeline.coverage_gaps(q, voted)
+        self.assertEqual(gaps, [])
 
-    def test_empty_concepts_raise(self):
-        with self.assertRaises(ValueError):
-            europepmc.translate_query([query_builder.Concept("c")], query_builder.Filters())
+    def test_resolve_coverage_gaps_recovers_missed_mesh_heading(self):
+        q = "Effect of RNA sequencing in Alzheimer Disease"
+        voted = [{"name": "RNA sequencing", "role": "method", "start": 2, "end": 3}]
+        blocks = facet_pipeline.resolve_coverage_gaps(self.ix, q, voted)
+        self.assertEqual(len(blocks), 1)
+        labels = [m["options"][0]["label"] for m in blocks[0]["mesh"]]
+        self.assertIn("Alzheimer Disease", labels)
+        self.assertIn("coverage gap", blocks[0]["rationale"])
+
+    def test_build_appends_gap_blocks_and_reports_them(self):
+        q = "Effect of RNA sequencing in Alzheimer Disease"
+        build = facet_pipeline._finish(
+            q, self.ix, {"facets": [{"name": "RNA sequencing", "role": "method",
+                                     "start": 2, "end": 3}], "mode": "heuristic", "runs": 0},
+            model=None, min_agreement=0.5, explode=True, max_freetext=None)
+        self.assertEqual(len(build["coverage_gaps"]), 1)
+        names = [c["name"] for c in build["concepts"]]
+        self.assertTrue(any("Alzheimer" in n for n in names))
+        self.assertIn("coverage gap", build["notes"])
 
 
 if __name__ == "__main__":
