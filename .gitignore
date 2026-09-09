@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+mesh2025.nt
+mesh2026.nt
+data/mesh.sqlite
+data/searches/
+data/map_cache/
+.DS_Store

@@ -1,0 +1,88 @@
+Models: ['anthropic/claude-opus-4.8', 'google/gemini-3.5-flash', 'deepseek/deepseek-v3.2', 'openai/gpt-5.4-mini', 'mistralai/ministral-3b-2512', 'mistralai/ministral-8b-2512', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-3-4b-it', 'microsoft/phi-4', 'ollama/llama3.2:1b', 'ollama/qwen2.5:1.5b']
+Runs/query: 10   jitter: False   seed: None   strict: True   cache: True   queries: 3   workers: 10
+Clean slate — removed: nothing
+
+Dispatching 330 tasks (11 models x 3 queries x 10 runs) across 10 workers...
+  ... 10/330 tasks complete
+  ... 20/330 tasks complete
+  ... 30/330 tasks complete
+  ... 40/330 tasks complete
+  ... 50/330 tasks complete
+  ... 60/330 tasks complete
+  ... 70/330 tasks complete
+  ... 80/330 tasks complete
+  ... 90/330 tasks complete
+  ... 100/330 tasks complete
+  ... 110/330 tasks complete
+  ... 120/330 tasks complete
+  ... 130/330 tasks complete
+  ... 140/330 tasks complete
+  ... 150/330 tasks complete
+  ... 160/330 tasks complete
+  ... 170/330 tasks complete
+  ... 180/330 tasks complete
+  ... 190/330 tasks complete
+  ... 200/330 tasks complete
+  ... 210/330 tasks complete
+  ... 220/330 tasks complete
+  ... 230/330 tasks complete
+  ... 240/330 tasks complete
+  ... 250/330 tasks complete
+  ... 260/330 tasks complete
+  ... 270/330 tasks complete
+  ... 280/330 tasks complete
+  ... 290/330 tasks complete
+  ... 300/330 tasks complete
+  ... 310/330 tasks complete
+  ... 320/330 tasks complete
+  ... 330/330 tasks complete
+
+Per-model latency (seconds per LLM call):
+  model                                n    mean  median     max
+  mistralai/ministral-8b-2512         30    70.7    23.6   253.0
+  mistralai/ministral-3b-2512         30     3.5     0.1    40.6
+  deepseek/deepseek-v3.2              30     2.4     0.0    27.0
+  anthropic/claude-opus-4.8           30     1.9     0.0    21.3
+  google/gemini-3.5-flash             30     1.4     0.0    30.5
+  google/gemma-3-4b-it                30     1.2     0.1    13.4
+  ollama/llama3.2:1b                  30     0.9     0.1     9.7
+  meta-llama/llama-3.1-8b-instruct    30     0.7     0.0     8.6
+  microsoft/phi-4                     30     0.7     0.0     7.5
+  openai/gpt-5.4-mini                 30     0.5     0.0     5.1
+  ollama/qwen2.5:1.5b                 30     0.4     0.0     5.8
+
+Wall time: 253.3s for 330 calls (10 workers)
+
+==========================================================================
+model                                    map_rawmap_content     queryquery_hash
+--------------------------------------------------------------------------
+claude-opus-4.8                             1.00      1.00      1.00      1.00
+gemini-3.5-flash                            1.00      1.00      1.00      1.00
+deepseek-v3.2                               1.00      1.00      1.00      1.00
+gpt-5.4-mini                                1.00      1.00      1.00      1.00
+ministral-3b-2512                           1.00      1.00      1.00      1.00
+ministral-8b-2512                           1.00      1.00      1.00      1.00
+llama-3.1-8b-instruct                       1.00      1.00      1.00      1.00
+gemma-3-4b-it                               1.00      1.00      1.00      1.00
+phi-4                                       1.00      1.00      1.00      1.00
+llama3.2:1b                                 1.00      1.00      1.00      1.00
+qwen2.5:1.5b                                1.00      1.00      1.00      1.00
+==========================================================================
+query_hash == 1.00 means the same question always compiles to the byte-identical
+PubMed query. High map_raw variation with a stable query_hash means the model
+reworded/reordered keywords but the deterministic layer absorbed it.
+
+==========================================================================
+CROSS-MODEL determinism (do different models agree on the SAME query?)
+--------------------------------------------------------------------------
+  Does optogenetic stimulation of the hippocampus impr agree=0.09 (1/11 models, 11 distinct)
+  single-cell RNA sequencing of microglia in Alzheimer agree=0.09 (1/11 models, 11 distinct)
+  CRISPR-Cas9 off-target effects detection methods     agree=0.10 (1/10 models, 10 distinct)
+  mean cross-model agreement: 0.0939
+==========================================================================
+Within-model = query_hash (reproducibility). Cross-model < 1.0 is EXPECTED:
+models legitimately pick different MeSH headings.
+
+Report -> data/determinism.json
+Figure -> data/determinism.png
+Excel  -> data/determinism.xlsx

@@ -1,0 +1,3606 @@
+{
+  "models_requested": [
+    "ollama/llama3.2:1b"
+  ],
+  "runs": 5,
+  "jitter": false,
+  "seed": null,
+  "strict": false,
+  "cache": false,
+  "wall_seconds": 138.5,
+  "mean_latency_s": {
+    "ollama/llama3.2:1b": 34.33
+  },
+  "models": [
+    {
+      "model": "ollama/llama3.2:1b",
+      "queries": [
+        {
+          "question": "Does optogenetic stimulation of the hippocampus improve memory consolidation in rodent models?",
+          "domains": [
+            "neuroscience"
+          ],
+          "ok_runs": 5,
+          "errors": [],
+          "scores": {
+            "map_raw": {
+              "runs": 5,
+              "distinct": 2,
+              "modal_count": 4,
+              "determinism": 0.8,
+              "fully_deterministic": false
+            },
+            "map_content": {
+              "runs": 5,
+              "distinct": 2,
+              "modal_count": 4,
+              "determinism": 0.8,
+              "fully_deterministic": false
+            },
+            "query": {
+              "runs": 5,
+              "distinct": 2,
+              "modal_count": 4,
+              "determinism": 0.8,
+              "fully_deterministic": false
+            },
+            "query_hash": {
+              "runs": 5,
+              "distinct": 2,
+              "modal_count": 4,
+              "determinism": 0.8,
+              "fully_deterministic": false
+            }
+          },
+          "distinct_hashes": [
+            "c0ad0ab1e68bed0c",
+            "f1db4f82f64c03c5"
+          ],
+          "sample_query": "(\"Optogenetics\"[MeSH Terms] OR \"Neuropharmacology\"[MeSH Terms] OR \"Cognitive Neuroscience\"[MeSH Terms] OR \"Optogenetic stimulation of the hippocampus\"[Title/Abstract] OR \"Hippocampal excitotoxicity\"[Title/Abstract] OR \"Memory consolidation\"[Title/Abstract] OR \"Neural plasticity\"[Title/Abstract] OR \"Synaptic transmission\"[Title/Abstract]) AND (\"Neural Stem Cells\"[MeSH Terms] OR \"Neurogenesis\"[MeSH Terms] OR \"Cerebellum\"[MeSH Terms] OR \"Hippocampal structure and function\"[Title/Abstract] OR \"Hippocampal volume\"[Title/Abstract] OR \"Hippocampal-dependent memory formation\"[Title/Abstract] OR \"Neural circuitry\"[Title/Abstract]) AND (\"Cognition\"[MeSH Terms] OR \"Synaptic Transmission\"[MeSH Terms] OR \"Memory formation\"[Title/Abstract] OR \"Short-term vs. long-term memory\"[Title/Abstract] OR \"Synaptic plasticity\"[Title/Abstract] OR \"Neural oscillations\"[Title/Abstract]) AND (\"Optogenetics\"[MeSH Terms] OR \"Neuropharmacology\"[MeSH Terms] OR \"Cognitive Neuroscience\"[MeSH Terms] OR \"Optogenetic stimulation of the hippocampus\"[Title/Abstract] OR \"Hippocampal excitotoxicity\"[Title/Abstract] OR \"Memory consolidation\"[Title/Abstract] OR \"Neural plasticity\"[Title/Abstract] OR \"Synaptic transmission\"[Title/Abstract])",
+          "runs": [
+            {
+              "query_hash": "f1db4f82f64c03c5",
+              "n_concepts": 4,
+              "n_terms": 29,
+              "query": "(\"Optogenetics\"[MeSH Terms] OR \"Neuropharmacology\"[MeSH Terms] OR \"Cognitive Neuroscience\"[MeSH Terms] OR \"Optogenetic stimulation of the hippocampus\"[Title/Abstract] OR \"Hippocampal excitotoxicity\"[Title/Abstract] OR \"Memory consolidation\"[Title/Abstract] OR \"Neural plasticity\"[Title/Abstract] OR \"Synaptic transmission\"[Title/Abstract]) AND (\"Neural Stem Cells\"[MeSH Terms] OR \"Neurogenesis\"[MeSH Terms] OR \"Cerebellum\"[MeSH Terms] OR \"Hippocampal structure and function\"[Title/Abstract] OR \"Hippocampal volume\"[Title/Abstract] OR \"Hippocampal-dependent memory formation\"[Title/Abstract] OR \"Neural circuitry\"[Title/Abstract]) AND (\"Cognition\"[MeSH Terms] OR \"Synaptic Transmission\"[MeSH Terms] OR \"Memory formation\"[Title/Abstract] OR \"Short-term vs. long-term memory\"[Title/Abstract] OR \"Synaptic plasticity\"[Title/Abstract] OR \"Neural oscillations\"[Title/Abstract]) AND (\"Optogenetics\"[MeSH Terms] OR \"Neuropharmacology\"[MeSH Terms] OR \"Cognitive Neuroscience\"[MeSH Terms] OR \"Optogenetic stimulation of the hippocampus\"[Title/Abstract] OR \"Hippocampal excitotoxicity\"[Title/Abstract] OR \"Memory consolidation\"[Title/Abstract] OR \"Neural plasticity\"[Title/Abstract] OR \"Synaptic transmission\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "Optogenetics",
+                    "rationale": "This concept block aims to identify relevant MeSH terms and synonyms related to optogenetics, hippocampal function, and memory consolidation in rodent models.",
+                    "mesh": [
+                      {
+                        "query": "Optogenetics",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D062308",
+                            "label": "Optogenetics",
+                            "trees": [
+                              "E05.393.667"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D062308"
+                      },
+                      {
+                        "query": "Neuropharmacology",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009480",
+                            "label": "Neuropharmacology",
+                            "trees": [
+                              "H01.158.610.208",
+                              "H01.158.703.030",
+                              "H02.628.280"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009480"
+                      },
+                      {
+                        "query": "Cognitive Neuroscience",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000066494",
+                            "label": "Cognitive Neuroscience",
+                            "trees": [
+                              "F04.096.628.255.500",
+                              "H01.158.610.030"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000066494"
+                      }
+                    ],
+                    "freetext": [
+                      "Optogenetic stimulation of the hippocampus",
+                      "Hippocampal excitotoxicity",
+                      "Memory consolidation",
+                      "Neural plasticity",
+                      "Synaptic transmission"
+                    ]
+                  },
+                  {
+                    "name": "Hippocampus",
+                    "rationale": "This concept block focuses on the hippocampus, a critical region for memory consolidation, and identifies relevant MeSH terms and synonyms.",
+                    "mesh": [
+                      {
+                        "query": "Neural Stem Cells",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D058953",
+                            "label": "Neural Stem Cells",
+                            "trees": [
+                              "A11.872.653"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D058953"
+                      },
+                      {
+                        "query": "Neurogenesis",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D055495",
+                            "label": "Neurogenesis",
+                            "trees": [
+                              "G04.152.912",
+                              "G07.345.500.325.377.687",
+                              "G08.686.784.170.450.500",
+                              "G11.561.620"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D055495"
+                      },
+                      {
+                        "query": "Cerebellum",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D002531",
+                            "label": "Cerebellum",
+                            "trees": [
+                              "A08.186.211.132.810.428.200"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D002531"
+                      }
+                    ],
+                    "freetext": [
+                      "Hippocampal structure and function",
+                      "Hippocampal volume",
+                      "Hippocampal-dependent memory formation",
+                      "Neural circuitry"
+                    ]
+                  },
+                  {
+                    "name": "Memory Consolidation",
+                    "rationale": "This concept block aims to identify relevant MeSH terms and synonyms related to memory consolidation, including its neural mechanisms.",
+                    "mesh": [
+                      {
+                        "query": "Cognitive Function",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D003071",
+                            "label": "Cognition",
+                            "trees": [
+                              "F02.463.188"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D003071"
+                      },
+                      {
+                        "query": "Learning and Memory",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Neurotransmission",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D009435",
+                            "label": "Synaptic Transmission",
+                            "trees": [
+                              "G02.111.820.850",
+                              "G04.835.850",
+                              "G07.265.880",
+                              "G11.561.830"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009435"
+                      }
+                    ],
+                    "freetext": [
+                      "Memory formation",
+                      "Short-term vs. long-term memory",
+                      "Synaptic plasticity",
+                      "Neural oscillations"
+                    ]
+                  },
+                  {
+                    "name": "Optogenetics",
+                    "rationale": "This concept block aims to identify relevant MeSH terms and synonyms related to optogenetics, hippocampal function, and memory consolidation in rodent models.",
+                    "mesh": [
+                      {
+                        "query": "Optogenetics",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D062308",
+                            "label": "Optogenetics",
+                            "trees": [
+                              "E05.393.667"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D062308"
+                      },
+                      {
+                        "query": "Neuropharmacology",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009480",
+                            "label": "Neuropharmacology",
+                            "trees": [
+                              "H01.158.610.208",
+                              "H01.158.703.030",
+                              "H02.628.280"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009480"
+                      },
+                      {
+                        "query": "Cognitive Neuroscience",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000066494",
+                            "label": "Cognitive Neuroscience",
+                            "trees": [
+                              "F04.096.628.255.500",
+                              "H01.158.610.030"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000066494"
+                      }
+                    ],
+                    "freetext": [
+                      "Optogenetic stimulation of the hippocampus",
+                      "Hippocampal excitotoxicity",
+                      "Memory consolidation",
+                      "Neural plasticity",
+                      "Synaptic transmission"
+                    ]
+                  }
+                ],
+                "notes": "The inclusion of 'Optogenetics' as a concept block allows for the exploration of its role in modulating neural activity and synaptic transmission. The focus on hippocampal excitotoxicity and memory consolidation highlights the importance of this region in learning and memory processes."
+              }
+            },
+            {
+              "query_hash": "c0ad0ab1e68bed0c",
+              "n_concepts": 4,
+              "n_terms": 21,
+              "query": "(\"Optogenetics\"[MeSH Terms] OR \"Neuropharmacology\"[MeSH Terms] OR \"Memory Consolidation\"[MeSH Terms] OR \"Optogenetic stimulation of the hippocampus improves memory consolidation in rodent models.\"[Title/Abstract] OR \"Optogenetics-mediated enhancement of hippocampal-dependent memory processes\"[Title/Abstract] OR \"Enhancement of hippocampal-dependent synaptic plasticity by optogenetic modulation\"[Title/Abstract]) AND (\"Memory Consolidation\"[MeSH Terms] OR \"Neurogenesis\"[MeSH Terms] OR \"Neuronal Plasticity\"[MeSH Terms] OR \"The hippocampus is a key structure involved in memory formation and consolidation.\"[Title/Abstract] OR \"Hippocampal-dependent synaptic plasticity is essential for learning and memory\"[Title/Abstract] OR \"Neurogenesis in the hippocampus may contribute to improved memory\"[Title/Abstract]) AND (\"Memory Consolidation\"[MeSH Terms] OR \"Synaptic Transmission\"[MeSH Terms] OR \"Memory consolidation is the process by which short-term memories are transformed into long-term ones.\"[Title/Abstract] OR \"Synaptic reconsolidation is a critical step in memory consolidation\"[Title/Abstract] OR \"Neurotransmitters, such as glutamate and acetylcholine, play key roles in synaptic plasticity during memory consolidation\"[Title/Abstract]) AND (\"Nervous System Diseases\"[MeSH Terms] OR \"Rodent models are commonly used in neuroscience research to study human neurological disorders.\"[Title/Abstract] OR \"Animal studies provide valuable insights into the mechanisms of neurological diseases\"[Title/Abstract] OR \"Rodents are often used as a model for studying neurodegenerative diseases, such as Alzheimer's disease\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "Optogenetics",
+                    "rationale": "This concept block combines Optogenetics, a technique that uses light to manipulate neural activity, with the hippocampus, a region critical for memory consolidation. By stimulating the hippocampus, researchers can potentially enhance memory formation in rodent models.",
+                    "mesh": [
+                      {
+                        "query": "Optogenetics",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D062308",
+                            "label": "Optogenetics",
+                            "trees": [
+                              "E05.393.667"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D062308"
+                      },
+                      {
+                        "query": "Neuropharmacology",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009480",
+                            "label": "Neuropharmacology",
+                            "trees": [
+                              "H01.158.610.208",
+                              "H01.158.703.030",
+                              "H02.628.280"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009480"
+                      },
+                      {
+                        "query": "Hippocampal Function",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Memory Consolidation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000069077",
+                            "label": "Memory Consolidation",
+                            "trees": [
+                              "F02.463.425.540.305.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000069077"
+                      }
+                    ],
+                    "freetext": [
+                      "Optogenetic stimulation of the hippocampus improves memory consolidation in rodent models.",
+                      "Optogenetics-mediated enhancement of hippocampal-dependent memory processes",
+                      "Enhancement of hippocampal-dependent synaptic plasticity by optogenetic modulation"
+                    ]
+                  },
+                  {
+                    "name": "Hippocampal Function",
+                    "rationale": "This concept block highlights the importance of the hippocampus in memory processing. By understanding how the hippocampus functions, researchers can better understand how to improve memory consolidation.",
+                    "mesh": [
+                      {
+                        "query": "Hippocampal Function",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Memory Consolidation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000069077",
+                            "label": "Memory Consolidation",
+                            "trees": [
+                              "F02.463.425.540.305.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000069077"
+                      },
+                      {
+                        "query": "Neurogenesis",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D055495",
+                            "label": "Neurogenesis",
+                            "trees": [
+                              "G04.152.912",
+                              "G07.345.500.325.377.687",
+                              "G08.686.784.170.450.500",
+                              "G11.561.620"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D055495"
+                      },
+                      {
+                        "query": "Synaptic Plasticity",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D009473",
+                            "label": "Neuronal Plasticity",
+                            "trees": [
+                              "G11.561.638"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009473"
+                      }
+                    ],
+                    "freetext": [
+                      "The hippocampus is a key structure involved in memory formation and consolidation.",
+                      "Hippocampal-dependent synaptic plasticity is essential for learning and memory",
+                      "Neurogenesis in the hippocampus may contribute to improved memory"
+                    ]
+                  },
+                  {
+                    "name": "Memory Consolidation",
+                    "rationale": "This concept block emphasizes the importance of memory consolidation in the context of Optogenetics. By understanding how to improve memory consolidation, researchers can develop new therapeutic strategies for memory-related disorders.",
+                    "mesh": [
+                      {
+                        "query": "Memory Consolidation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000069077",
+                            "label": "Memory Consolidation",
+                            "trees": [
+                              "F02.463.425.540.305.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000069077"
+                      },
+                      {
+                        "query": "Neurotransmission",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D009435",
+                            "label": "Synaptic Transmission",
+                            "trees": [
+                              "G02.111.820.850",
+                              "G04.835.850",
+                              "G07.265.880",
+                              "G11.561.830"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009435"
+                      },
+                      {
+                        "query": "Synaptic Reconsolidation",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "Memory consolidation is the process by which short-term memories are transformed into long-term ones.",
+                      "Synaptic reconsolidation is a critical step in memory consolidation",
+                      "Neurotransmitters, such as glutamate and acetylcholine, play key roles in synaptic plasticity during memory consolidation"
+                    ]
+                  },
+                  {
+                    "name": "Rodent Models",
+                    "rationale": "This concept block highlights the importance of using rodent models in research on Optogenetics and memory consolidation. By understanding how to improve memory consolidation in rodents, researchers can develop new strategies for treating neurological disorders.",
+                    "mesh": [
+                      {
+                        "query": "Rodent Models",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Animal Studies",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Neurological Disorders",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D009422",
+                            "label": "Nervous System Diseases",
+                            "trees": [
+                              "C10"
+                            ]
+                          },
+                          {
+                            "dui": "D055825",
+                            "label": "National Institute of Neurological Disorders and Stroke (U.S.)",
+                            "trees": [
+                              "I01.409.418.750.600.650.496.461",
+                              "N03.540.052.750.461",
+                              "N03.540.348.500.500.600.650.496.461"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009422"
+                      }
+                    ],
+                    "freetext": [
+                      "Rodent models are commonly used in neuroscience research to study human neurological disorders.",
+                      "Animal studies provide valuable insights into the mechanisms of neurological diseases",
+                      "Rodents are often used as a model for studying neurodegenerative diseases, such as Alzheimer's disease"
+                    ]
+                  }
+                ],
+                "notes": "The use of optogenetic stimulation in this context is a relatively novel approach. The results may be influenced by the specific experimental design and methods used. Further research is needed to fully understand the effects of Optogenetics on memory consolidation in rodents."
+              }
+            },
+            {
+              "query_hash": "c0ad0ab1e68bed0c",
+              "n_concepts": 4,
+              "n_terms": 21,
+              "query": "(\"Optogenetics\"[MeSH Terms] OR \"Neuropharmacology\"[MeSH Terms] OR \"Memory Consolidation\"[MeSH Terms] OR \"Optogenetic stimulation of the hippocampus improves memory consolidation in rodent models.\"[Title/Abstract] OR \"Optogenetics-mediated enhancement of hippocampal-dependent memory processes\"[Title/Abstract] OR \"Enhancement of hippocampal-dependent synaptic plasticity by optogenetic modulation\"[Title/Abstract]) AND (\"Memory Consolidation\"[MeSH Terms] OR \"Neurogenesis\"[MeSH Terms] OR \"Neuronal Plasticity\"[MeSH Terms] OR \"The hippocampus is a key structure involved in memory formation and consolidation.\"[Title/Abstract] OR \"Hippocampal-dependent synaptic plasticity is essential for learning and memory\"[Title/Abstract] OR \"Neurogenesis in the hippocampus may contribute to improved memory\"[Title/Abstract]) AND (\"Memory Consolidation\"[MeSH Terms] OR \"Synaptic Transmission\"[MeSH Terms] OR \"Memory consolidation is the process by which short-term memories are transformed into long-term ones.\"[Title/Abstract] OR \"Synaptic reconsolidation is a critical step in memory consolidation\"[Title/Abstract] OR \"Neurotransmitters, such as glutamate and acetylcholine, play key roles in synaptic plasticity during memory consolidation\"[Title/Abstract]) AND (\"Nervous System Diseases\"[MeSH Terms] OR \"Rodent models are commonly used in neuroscience research to study human neurological disorders.\"[Title/Abstract] OR \"Animal studies provide valuable insights into the mechanisms of neurological diseases\"[Title/Abstract] OR \"Rodents are often used as a model for studying neurodegenerative diseases, such as Alzheimer's disease\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "Optogenetics",
+                    "rationale": "This concept block combines Optogenetics, a technique that uses light to manipulate neural activity, with the hippocampus, a region critical for memory consolidation. By stimulating the hippocampus, researchers can potentially enhance memory formation in rodent models.",
+                    "mesh": [
+                      {
+                        "query": "Optogenetics",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D062308",
+                            "label": "Optogenetics",
+                            "trees": [
+                              "E05.393.667"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D062308"
+                      },
+                      {
+                        "query": "Neuropharmacology",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009480",
+                            "label": "Neuropharmacology",
+                            "trees": [
+                              "H01.158.610.208",
+                              "H01.158.703.030",
+                              "H02.628.280"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009480"
+                      },
+                      {
+                        "query": "Hippocampal Function",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Memory Consolidation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000069077",
+                            "label": "Memory Consolidation",
+                            "trees": [
+                              "F02.463.425.540.305.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000069077"
+                      }
+                    ],
+                    "freetext": [
+                      "Optogenetic stimulation of the hippocampus improves memory consolidation in rodent models.",
+                      "Optogenetics-mediated enhancement of hippocampal-dependent memory processes",
+                      "Enhancement of hippocampal-dependent synaptic plasticity by optogenetic modulation"
+                    ]
+                  },
+                  {
+                    "name": "Hippocampal Function",
+                    "rationale": "This concept block highlights the importance of the hippocampus in memory processing. By understanding how the hippocampus functions, researchers can better understand how to improve memory consolidation.",
+                    "mesh": [
+                      {
+                        "query": "Hippocampal Function",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Memory Consolidation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000069077",
+                            "label": "Memory Consolidation",
+                            "trees": [
+                              "F02.463.425.540.305.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000069077"
+                      },
+                      {
+                        "query": "Neurogenesis",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D055495",
+                            "label": "Neurogenesis",
+                            "trees": [
+                              "G04.152.912",
+                              "G07.345.500.325.377.687",
+                              "G08.686.784.170.450.500",
+                              "G11.561.620"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D055495"
+                      },
+                      {
+                        "query": "Synaptic Plasticity",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D009473",
+                            "label": "Neuronal Plasticity",
+                            "trees": [
+                              "G11.561.638"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009473"
+                      }
+                    ],
+                    "freetext": [
+                      "The hippocampus is a key structure involved in memory formation and consolidation.",
+                      "Hippocampal-dependent synaptic plasticity is essential for learning and memory",
+                      "Neurogenesis in the hippocampus may contribute to improved memory"
+                    ]
+                  },
+                  {
+                    "name": "Memory Consolidation",
+                    "rationale": "This concept block emphasizes the importance of memory consolidation in the context of Optogenetics. By understanding how to improve memory consolidation, researchers can develop new therapeutic strategies for memory-related disorders.",
+                    "mesh": [
+                      {
+                        "query": "Memory Consolidation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000069077",
+                            "label": "Memory Consolidation",
+                            "trees": [
+                              "F02.463.425.540.305.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000069077"
+                      },
+                      {
+                        "query": "Neurotransmission",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D009435",
+                            "label": "Synaptic Transmission",
+                            "trees": [
+                              "G02.111.820.850",
+                              "G04.835.850",
+                              "G07.265.880",
+                              "G11.561.830"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009435"
+                      },
+                      {
+                        "query": "Synaptic Reconsolidation",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "Memory consolidation is the process by which short-term memories are transformed into long-term ones.",
+                      "Synaptic reconsolidation is a critical step in memory consolidation",
+                      "Neurotransmitters, such as glutamate and acetylcholine, play key roles in synaptic plasticity during memory consolidation"
+                    ]
+                  },
+                  {
+                    "name": "Rodent Models",
+                    "rationale": "This concept block highlights the importance of using rodent models in research on Optogenetics and memory consolidation. By understanding how to improve memory consolidation in rodents, researchers can develop new strategies for treating neurological disorders.",
+                    "mesh": [
+                      {
+                        "query": "Rodent Models",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Animal Studies",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Neurological Disorders",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D009422",
+                            "label": "Nervous System Diseases",
+                            "trees": [
+                              "C10"
+                            ]
+                          },
+                          {
+                            "dui": "D055825",
+                            "label": "National Institute of Neurological Disorders and Stroke (U.S.)",
+                            "trees": [
+                              "I01.409.418.750.600.650.496.461",
+                              "N03.540.052.750.461",
+                              "N03.540.348.500.500.600.650.496.461"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009422"
+                      }
+                    ],
+                    "freetext": [
+                      "Rodent models are commonly used in neuroscience research to study human neurological disorders.",
+                      "Animal studies provide valuable insights into the mechanisms of neurological diseases",
+                      "Rodents are often used as a model for studying neurodegenerative diseases, such as Alzheimer's disease"
+                    ]
+                  }
+                ],
+                "notes": "The use of optogenetic stimulation in this context is a relatively novel approach. The results may be influenced by the specific experimental design and methods used. Further research is needed to fully understand the effects of Optogenetics on memory consolidation in rodents."
+              }
+            },
+            {
+              "query_hash": "c0ad0ab1e68bed0c",
+              "n_concepts": 4,
+              "n_terms": 21,
+              "query": "(\"Optogenetics\"[MeSH Terms] OR \"Neuropharmacology\"[MeSH Terms] OR \"Memory Consolidation\"[MeSH Terms] OR \"Optogenetic stimulation of the hippocampus improves memory consolidation in rodent models.\"[Title/Abstract] OR \"Optogenetics-mediated enhancement of hippocampal-dependent memory processes\"[Title/Abstract] OR \"Enhancement of hippocampal-dependent synaptic plasticity by optogenetic modulation\"[Title/Abstract]) AND (\"Memory Consolidation\"[MeSH Terms] OR \"Neurogenesis\"[MeSH Terms] OR \"Neuronal Plasticity\"[MeSH Terms] OR \"The hippocampus is a key structure involved in memory formation and consolidation.\"[Title/Abstract] OR \"Hippocampal-dependent synaptic plasticity is essential for learning and memory\"[Title/Abstract] OR \"Neurogenesis in the hippocampus may contribute to improved memory\"[Title/Abstract]) AND (\"Memory Consolidation\"[MeSH Terms] OR \"Synaptic Transmission\"[MeSH Terms] OR \"Memory consolidation is the process by which short-term memories are transformed into long-term ones.\"[Title/Abstract] OR \"Synaptic reconsolidation is a critical step in memory consolidation\"[Title/Abstract] OR \"Neurotransmitters, such as glutamate and acetylcholine, play key roles in synaptic plasticity during memory consolidation\"[Title/Abstract]) AND (\"Nervous System Diseases\"[MeSH Terms] OR \"Rodent models are commonly used in neuroscience research to study human neurological disorders.\"[Title/Abstract] OR \"Animal studies provide valuable insights into the mechanisms of neurological diseases\"[Title/Abstract] OR \"Rodents are often used as a model for studying neurodegenerative diseases, such as Alzheimer's disease\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "Optogenetics",
+                    "rationale": "This concept block combines Optogenetics, a technique that uses light to manipulate neural activity, with the hippocampus, a region critical for memory consolidation. By stimulating the hippocampus, researchers can potentially enhance memory formation in rodent models.",
+                    "mesh": [
+                      {
+                        "query": "Optogenetics",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D062308",
+                            "label": "Optogenetics",
+                            "trees": [
+                              "E05.393.667"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D062308"
+                      },
+                      {
+                        "query": "Neuropharmacology",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009480",
+                            "label": "Neuropharmacology",
+                            "trees": [
+                              "H01.158.610.208",
+                              "H01.158.703.030",
+                              "H02.628.280"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009480"
+                      },
+                      {
+                        "query": "Hippocampal Function",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Memory Consolidation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000069077",
+                            "label": "Memory Consolidation",
+                            "trees": [
+                              "F02.463.425.540.305.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000069077"
+                      }
+                    ],
+                    "freetext": [
+                      "Optogenetic stimulation of the hippocampus improves memory consolidation in rodent models.",
+                      "Optogenetics-mediated enhancement of hippocampal-dependent memory processes",
+                      "Enhancement of hippocampal-dependent synaptic plasticity by optogenetic modulation"
+                    ]
+                  },
+                  {
+                    "name": "Hippocampal Function",
+                    "rationale": "This concept block highlights the importance of the hippocampus in memory processing. By understanding how the hippocampus functions, researchers can better understand how to improve memory consolidation.",
+                    "mesh": [
+                      {
+                        "query": "Hippocampal Function",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Memory Consolidation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000069077",
+                            "label": "Memory Consolidation",
+                            "trees": [
+                              "F02.463.425.540.305.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000069077"
+                      },
+                      {
+                        "query": "Neurogenesis",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D055495",
+                            "label": "Neurogenesis",
+                            "trees": [
+                              "G04.152.912",
+                              "G07.345.500.325.377.687",
+                              "G08.686.784.170.450.500",
+                              "G11.561.620"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D055495"
+                      },
+                      {
+                        "query": "Synaptic Plasticity",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D009473",
+                            "label": "Neuronal Plasticity",
+                            "trees": [
+                              "G11.561.638"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009473"
+                      }
+                    ],
+                    "freetext": [
+                      "The hippocampus is a key structure involved in memory formation and consolidation.",
+                      "Hippocampal-dependent synaptic plasticity is essential for learning and memory",
+                      "Neurogenesis in the hippocampus may contribute to improved memory"
+                    ]
+                  },
+                  {
+                    "name": "Memory Consolidation",
+                    "rationale": "This concept block emphasizes the importance of memory consolidation in the context of Optogenetics. By understanding how to improve memory consolidation, researchers can develop new therapeutic strategies for memory-related disorders.",
+                    "mesh": [
+                      {
+                        "query": "Memory Consolidation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000069077",
+                            "label": "Memory Consolidation",
+                            "trees": [
+                              "F02.463.425.540.305.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000069077"
+                      },
+                      {
+                        "query": "Neurotransmission",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D009435",
+                            "label": "Synaptic Transmission",
+                            "trees": [
+                              "G02.111.820.850",
+                              "G04.835.850",
+                              "G07.265.880",
+                              "G11.561.830"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009435"
+                      },
+                      {
+                        "query": "Synaptic Reconsolidation",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "Memory consolidation is the process by which short-term memories are transformed into long-term ones.",
+                      "Synaptic reconsolidation is a critical step in memory consolidation",
+                      "Neurotransmitters, such as glutamate and acetylcholine, play key roles in synaptic plasticity during memory consolidation"
+                    ]
+                  },
+                  {
+                    "name": "Rodent Models",
+                    "rationale": "This concept block highlights the importance of using rodent models in research on Optogenetics and memory consolidation. By understanding how to improve memory consolidation in rodents, researchers can develop new strategies for treating neurological disorders.",
+                    "mesh": [
+                      {
+                        "query": "Rodent Models",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Animal Studies",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Neurological Disorders",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D009422",
+                            "label": "Nervous System Diseases",
+                            "trees": [
+                              "C10"
+                            ]
+                          },
+                          {
+                            "dui": "D055825",
+                            "label": "National Institute of Neurological Disorders and Stroke (U.S.)",
+                            "trees": [
+                              "I01.409.418.750.600.650.496.461",
+                              "N03.540.052.750.461",
+                              "N03.540.348.500.500.600.650.496.461"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009422"
+                      }
+                    ],
+                    "freetext": [
+                      "Rodent models are commonly used in neuroscience research to study human neurological disorders.",
+                      "Animal studies provide valuable insights into the mechanisms of neurological diseases",
+                      "Rodents are often used as a model for studying neurodegenerative diseases, such as Alzheimer's disease"
+                    ]
+                  }
+                ],
+                "notes": "The use of optogenetic stimulation in this context is a relatively novel approach. The results may be influenced by the specific experimental design and methods used. Further research is needed to fully understand the effects of Optogenetics on memory consolidation in rodents."
+              }
+            },
+            {
+              "query_hash": "c0ad0ab1e68bed0c",
+              "n_concepts": 4,
+              "n_terms": 21,
+              "query": "(\"Optogenetics\"[MeSH Terms] OR \"Neuropharmacology\"[MeSH Terms] OR \"Memory Consolidation\"[MeSH Terms] OR \"Optogenetic stimulation of the hippocampus improves memory consolidation in rodent models.\"[Title/Abstract] OR \"Optogenetics-mediated enhancement of hippocampal-dependent memory processes\"[Title/Abstract] OR \"Enhancement of hippocampal-dependent synaptic plasticity by optogenetic modulation\"[Title/Abstract]) AND (\"Memory Consolidation\"[MeSH Terms] OR \"Neurogenesis\"[MeSH Terms] OR \"Neuronal Plasticity\"[MeSH Terms] OR \"The hippocampus is a key structure involved in memory formation and consolidation.\"[Title/Abstract] OR \"Hippocampal-dependent synaptic plasticity is essential for learning and memory\"[Title/Abstract] OR \"Neurogenesis in the hippocampus may contribute to improved memory\"[Title/Abstract]) AND (\"Memory Consolidation\"[MeSH Terms] OR \"Synaptic Transmission\"[MeSH Terms] OR \"Memory consolidation is the process by which short-term memories are transformed into long-term ones.\"[Title/Abstract] OR \"Synaptic reconsolidation is a critical step in memory consolidation\"[Title/Abstract] OR \"Neurotransmitters, such as glutamate and acetylcholine, play key roles in synaptic plasticity during memory consolidation\"[Title/Abstract]) AND (\"Nervous System Diseases\"[MeSH Terms] OR \"Rodent models are commonly used in neuroscience research to study human neurological disorders.\"[Title/Abstract] OR \"Animal studies provide valuable insights into the mechanisms of neurological diseases\"[Title/Abstract] OR \"Rodents are often used as a model for studying neurodegenerative diseases, such as Alzheimer's disease\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "Optogenetics",
+                    "rationale": "This concept block combines Optogenetics, a technique that uses light to manipulate neural activity, with the hippocampus, a region critical for memory consolidation. By stimulating the hippocampus, researchers can potentially enhance memory formation in rodent models.",
+                    "mesh": [
+                      {
+                        "query": "Optogenetics",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D062308",
+                            "label": "Optogenetics",
+                            "trees": [
+                              "E05.393.667"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D062308"
+                      },
+                      {
+                        "query": "Neuropharmacology",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009480",
+                            "label": "Neuropharmacology",
+                            "trees": [
+                              "H01.158.610.208",
+                              "H01.158.703.030",
+                              "H02.628.280"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009480"
+                      },
+                      {
+                        "query": "Hippocampal Function",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Memory Consolidation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000069077",
+                            "label": "Memory Consolidation",
+                            "trees": [
+                              "F02.463.425.540.305.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000069077"
+                      }
+                    ],
+                    "freetext": [
+                      "Optogenetic stimulation of the hippocampus improves memory consolidation in rodent models.",
+                      "Optogenetics-mediated enhancement of hippocampal-dependent memory processes",
+                      "Enhancement of hippocampal-dependent synaptic plasticity by optogenetic modulation"
+                    ]
+                  },
+                  {
+                    "name": "Hippocampal Function",
+                    "rationale": "This concept block highlights the importance of the hippocampus in memory processing. By understanding how the hippocampus functions, researchers can better understand how to improve memory consolidation.",
+                    "mesh": [
+                      {
+                        "query": "Hippocampal Function",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Memory Consolidation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000069077",
+                            "label": "Memory Consolidation",
+                            "trees": [
+                              "F02.463.425.540.305.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000069077"
+                      },
+                      {
+                        "query": "Neurogenesis",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D055495",
+                            "label": "Neurogenesis",
+                            "trees": [
+                              "G04.152.912",
+                              "G07.345.500.325.377.687",
+                              "G08.686.784.170.450.500",
+                              "G11.561.620"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D055495"
+                      },
+                      {
+                        "query": "Synaptic Plasticity",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D009473",
+                            "label": "Neuronal Plasticity",
+                            "trees": [
+                              "G11.561.638"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009473"
+                      }
+                    ],
+                    "freetext": [
+                      "The hippocampus is a key structure involved in memory formation and consolidation.",
+                      "Hippocampal-dependent synaptic plasticity is essential for learning and memory",
+                      "Neurogenesis in the hippocampus may contribute to improved memory"
+                    ]
+                  },
+                  {
+                    "name": "Memory Consolidation",
+                    "rationale": "This concept block emphasizes the importance of memory consolidation in the context of Optogenetics. By understanding how to improve memory consolidation, researchers can develop new therapeutic strategies for memory-related disorders.",
+                    "mesh": [
+                      {
+                        "query": "Memory Consolidation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000069077",
+                            "label": "Memory Consolidation",
+                            "trees": [
+                              "F02.463.425.540.305.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000069077"
+                      },
+                      {
+                        "query": "Neurotransmission",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D009435",
+                            "label": "Synaptic Transmission",
+                            "trees": [
+                              "G02.111.820.850",
+                              "G04.835.850",
+                              "G07.265.880",
+                              "G11.561.830"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009435"
+                      },
+                      {
+                        "query": "Synaptic Reconsolidation",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "Memory consolidation is the process by which short-term memories are transformed into long-term ones.",
+                      "Synaptic reconsolidation is a critical step in memory consolidation",
+                      "Neurotransmitters, such as glutamate and acetylcholine, play key roles in synaptic plasticity during memory consolidation"
+                    ]
+                  },
+                  {
+                    "name": "Rodent Models",
+                    "rationale": "This concept block highlights the importance of using rodent models in research on Optogenetics and memory consolidation. By understanding how to improve memory consolidation in rodents, researchers can develop new strategies for treating neurological disorders.",
+                    "mesh": [
+                      {
+                        "query": "Rodent Models",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Animal Studies",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Neurological Disorders",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D009422",
+                            "label": "Nervous System Diseases",
+                            "trees": [
+                              "C10"
+                            ]
+                          },
+                          {
+                            "dui": "D055825",
+                            "label": "National Institute of Neurological Disorders and Stroke (U.S.)",
+                            "trees": [
+                              "I01.409.418.750.600.650.496.461",
+                              "N03.540.052.750.461",
+                              "N03.540.348.500.500.600.650.496.461"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009422"
+                      }
+                    ],
+                    "freetext": [
+                      "Rodent models are commonly used in neuroscience research to study human neurological disorders.",
+                      "Animal studies provide valuable insights into the mechanisms of neurological diseases",
+                      "Rodents are often used as a model for studying neurodegenerative diseases, such as Alzheimer's disease"
+                    ]
+                  }
+                ],
+                "notes": "The use of optogenetic stimulation in this context is a relatively novel approach. The results may be influenced by the specific experimental design and methods used. Further research is needed to fully understand the effects of Optogenetics on memory consolidation in rodents."
+              }
+            }
+          ]
+        },
+        {
+          "question": "single-cell RNA sequencing of microglia in Alzheimer's disease",
+          "domains": [
+            "neuroscience",
+            "bioinformatics"
+          ],
+          "ok_runs": 5,
+          "errors": [],
+          "scores": {
+            "map_raw": {
+              "runs": 5,
+              "distinct": 2,
+              "modal_count": 3,
+              "determinism": 0.6,
+              "fully_deterministic": false
+            },
+            "map_content": {
+              "runs": 5,
+              "distinct": 2,
+              "modal_count": 3,
+              "determinism": 0.6,
+              "fully_deterministic": false
+            },
+            "query": {
+              "runs": 5,
+              "distinct": 2,
+              "modal_count": 3,
+              "determinism": 0.6,
+              "fully_deterministic": false
+            },
+            "query_hash": {
+              "runs": 5,
+              "distinct": 2,
+              "modal_count": 3,
+              "determinism": 0.6,
+              "fully_deterministic": false
+            }
+          },
+          "distinct_hashes": [
+            "6593532ba527fd3e",
+            "dcf4b165cdfc23fa"
+          ],
+          "sample_query": "(\"Neuronal Plasticity\"[MeSH Terms] OR \"single-cell RNA sequencing of microglia in Alzheimer's disease\"[Title/Abstract] OR \"microglial cell heterogeneity and function in AD\"[Title/Abstract] OR \"neuroinflammation and neurodegeneration in AD\"[Title/Abstract]) AND (\"Alzheimer's disease is characterized by progressive neuronal loss and amyloid-beta accumulation, but the role of microglia remains unclear.\"[Title/Abstract] OR \"microglial activation and neuroinflammation contribute to AD progression\"[Title/Abstract] OR \"biomarkers for Alzheimer's disease diagnosis and prognosis\"[Title/Abstract]) AND (\"Synaptic Transmission\"[MeSH Terms] OR \"Microglia are involved in neuronal plasticity and synaptic function, but their mechanisms remain unclear.\"[Title/Abstract] OR \"neuroinflammation and neurodegeneration are key features of AD\"[Title/Abstract] OR \"microglial modulation of neural circuits\"[Title/Abstract])",
+          "runs": [
+            {
+              "query_hash": "dcf4b165cdfc23fa",
+              "n_concepts": 3,
+              "n_terms": 11,
+              "query": "(\"Neuronal Plasticity\"[MeSH Terms] OR \"single-cell RNA sequencing of microglia in Alzheimer's disease\"[Title/Abstract] OR \"microglial cell heterogeneity and function in AD\"[Title/Abstract] OR \"neuroinflammation and neurodegeneration in AD\"[Title/Abstract]) AND (\"Alzheimer's disease is characterized by progressive neuronal loss and amyloid-beta accumulation, but the role of microglia remains unclear.\"[Title/Abstract] OR \"microglial activation and neuroinflammation contribute to AD progression\"[Title/Abstract] OR \"biomarkers for Alzheimer's disease diagnosis and prognosis\"[Title/Abstract]) AND (\"Synaptic Transmission\"[MeSH Terms] OR \"Microglia are involved in neuronal plasticity and synaptic function, but their mechanisms remain unclear.\"[Title/Abstract] OR \"neuroinflammation and neurodegeneration are key features of AD\"[Title/Abstract] OR \"microglial modulation of neural circuits\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "Microglial cells",
+                    "rationale": "Understanding the role of microglia in Alzheimer's disease requires a comprehensive analysis of their single-cell RNA sequencing profiles.",
+                    "mesh": [
+                      {
+                        "query": "Neuronal plasticity",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009473",
+                            "label": "Neuronal Plasticity",
+                            "trees": [
+                              "G11.561.638"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009473"
+                      },
+                      {
+                        "query": "Microglial activation",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Alzheimer's disease pathology",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "single-cell RNA sequencing of microglia in Alzheimer's disease",
+                      "microglial cell heterogeneity and function in AD",
+                      "neuroinflammation and neurodegeneration in AD"
+                    ]
+                  },
+                  {
+                    "name": "Alzheimer's disease",
+                    "rationale": "Microglia play a critical role in Alzheimer's disease pathology, but their involvement is not well understood.",
+                    "mesh": [
+                      {
+                        "query": "Neuronal loss",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Amyloid-beta deposition",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Tau pathology",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "Alzheimer's disease is characterized by progressive neuronal loss and amyloid-beta accumulation, but the role of microglia remains unclear.",
+                      "microglial activation and neuroinflammation contribute to AD progression",
+                      "biomarkers for Alzheimer's disease diagnosis and prognosis"
+                    ]
+                  },
+                  {
+                    "name": "Neuronal plasticity",
+                    "rationale": "Neuronal plasticity is a hallmark of Alzheimer's disease, but microglia play a crucial role in this process.",
+                    "mesh": [
+                      {
+                        "query": "Synaptic transmission",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009435",
+                            "label": "Synaptic Transmission",
+                            "trees": [
+                              "G02.111.820.850",
+                              "G04.835.850",
+                              "G07.265.880",
+                              "G11.561.830"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009435"
+                      },
+                      {
+                        "query": "Neurotransmitter release",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Neural circuit reorganization",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "Microglia are involved in neuronal plasticity and synaptic function, but their mechanisms remain unclear.",
+                      "neuroinflammation and neurodegeneration are key features of AD",
+                      "microglial modulation of neural circuits"
+                    ]
+                  }
+                ],
+                "notes": "The search should focus on single-cell RNA sequencing studies that investigate microglial cell heterogeneity and function in Alzheimer's disease. The inclusion of MeSH terms will help to identify relevant articles."
+              }
+            },
+            {
+              "query_hash": "6593532ba527fd3e",
+              "n_concepts": 8,
+              "n_terms": 44,
+              "query": "(\"Neuronal Plasticity\"[MeSH Terms] OR \"Alzheimer Disease\"[MeSH Terms] OR \"MicroRNAs\"[MeSH Terms] OR \"RNA, Messenger\"[MeSH Terms] OR \"Gene Expression Profiling\"[MeSH Terms] OR \"Microglia are the resident immune cells of the central nervous system (CNS) and play a crucial role in maintaining brain homeostasis.\"[Title/Abstract] OR \"In Alzheimer's disease, microglial activation is thought to contribute to neurodegeneration by releasing pro-inflammatory cytokines and promoting neuronal damage.\"[Title/Abstract] OR \"Single-cell RNA sequencing has emerged as a powerful tool for studying microglial heterogeneity and identifying novel biomarkers for Alzheimer's disease.\"[Title/Abstract]) AND (\"Neurodegenerative Diseases\"[MeSH Terms] OR \"Cognitive Dysfunction\"[MeSH Terms] OR \"tau Proteins\"[MeSH Terms] OR \"Mitochondrial Diseases\"[MeSH Terms] OR \"Alzheimer's disease is a complex neurodegenerative disorder characterized by cognitive decline and memory loss.\"[Title/Abstract] OR \"The pathogenesis of Alzheimer's disease involves the accumulation of amyloid-beta plaques and tau protein tangles, leading to neuronal damage and death.\"[Title/Abstract] OR \"Mitochondrial dysfunction is thought to contribute to the progression of Alzheimer's disease.\"[Title/Abstract]) AND (\"MicroRNAs\"[MeSH Terms] OR \"RNA, Messenger\"[MeSH Terms] OR \"Gene Expression Profiling\"[MeSH Terms] OR \"Single-Cell Analysis\"[MeSH Terms] OR \"Computational Biology\"[MeSH Terms] OR \"Single-cell RNA sequencing is a powerful tool for studying the heterogeneity of single cells.\"[Title/Abstract] OR \"This technique involves the analysis of RNA sequencing data from individual cells to identify unique gene expression profiles.\"[Title/Abstract] OR \"Single-cell RNA sequencing has emerged as a key component in understanding complex biological systems, including microglia in Alzheimer's disease.\"[Title/Abstract]) AND (\"Neuroprotection\"[MeSH Terms] OR \"MicroRNAs are small non-coding RNAs that regulate gene expression by binding to messenger RNA (mRNA) and preventing its translation.\"[Title/Abstract] OR \"In Alzheimer's disease, microRNAs have been shown to play a role in regulating cellular stress responses and promoting neuronal survival.\"[Title/Abstract] OR \"MicroRNAs can also be used as biomarkers for diagnosing and monitoring the progression of neurodegenerative diseases like Alzheimer's.\"[Title/Abstract]) AND (\"Gene Expression Regulation\"[MeSH Terms] OR \"mRNA is the primary transcript in eukaryotic cells, responsible for encoding proteins.\"[Title/Abstract] OR \"In Alzheimer's disease, mRNA has been shown to play a role in regulating cellular stress responses and promoting neuronal survival.\"[Title/Abstract] OR \"mRNA can also be used as biomarkers for diagnosing and monitoring the progression of neurodegenerative diseases like Alzheimer's.\"[Title/Abstract]) AND (\"Single-Cell Analysis\"[MeSH Terms] OR \"Computational Biology\"[MeSH Terms] OR \"Transcriptomics is the study of the complete set of RNA transcripts in a cell or organism.\"[Title/Abstract] OR \"In Alzheimer's disease, transcriptomics has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.\"[Title/Abstract] OR \"Transcriptomics can also be used to monitor the progression of neurodegenerative diseases like Alzheimer's.\"[Title/Abstract]) AND (\"Neuroanatomy\"[MeSH Terms] OR \"Neurophysiology\"[MeSH Terms] OR \"A connectome is the complete map of neural connections within an organism.\"[Title/Abstract] OR \"In Alzheimer's disease, a connectome has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.\"[Title/Abstract] OR \"Connectomes can also be used to monitor the progression of neurodegenerative diseases like Alzheimer's.\"[Title/Abstract]) AND (\"Optogenetics is the use of light to control specific cells or neurons in the nervous system.\"[Title/Abstract] OR \"In Alzheimer's disease, optogenetics has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.\"[Title/Abstract] OR \"Optogenetics can also be used to monitor the progression of neurodegenerative diseases like Alzheimer's.\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "Microglial cells",
+                    "rationale": "Microglia are the primary immune cells in the CNS, and their dysfunction is thought to contribute to neurodegeneration in Alzheimer's disease. Single-cell RNA sequencing can provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                    "mesh": [
+                      {
+                        "query": "Neuronal plasticity",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009473",
+                            "label": "Neuronal Plasticity",
+                            "trees": [
+                              "G11.561.638"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009473"
+                      },
+                      {
+                        "query": "Alzheimer's disease",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D000544",
+                            "label": "Alzheimer Disease",
+                            "trees": [
+                              "C10.228.140.380.100",
+                              "C10.574.945.249",
+                              "F03.615.400.100"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000544"
+                      },
+                      {
+                        "query": "Single-cell RNA sequencing",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "MicroRNA",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D035683",
+                            "label": "MicroRNAs",
+                            "trees": [
+                              "D13.150.650.319",
+                              "D13.444.735.150.319",
+                              "D13.444.735.790.552.500"
+                            ]
+                          },
+                          {
+                            "dui": "D000074166",
+                            "label": "Circulating MicroRNA",
+                            "trees": [
+                              "D13.150.650.319.500",
+                              "D13.444.154.250",
+                              "D13.444.735.150.319.500",
+                              "D13.444.735.790.552.500.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D035683"
+                      },
+                      {
+                        "query": "mRNA",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D012333",
+                            "label": "RNA, Messenger",
+                            "trees": [
+                              "D13.444.735.544"
+                            ]
+                          },
+                          {
+                            "dui": "D000087503",
+                            "label": "mRNA Vaccines",
+                            "trees": [
+                              "D12.776.828.868.228.500",
+                              "D20.215.894.860.900.450",
+                              "D20.215.894.865.450.500",
+                              "D23.050.865.450.500"
+                            ]
+                          },
+                          {
+                            "dui": "D000098556",
+                            "label": "mRNA Guanylyltransferases",
+                            "trees": [
+                              "D08.811.277.352.650.600.800",
+                              "D08.811.913.696.445.018"
+                            ]
+                          },
+                          {
+                            "dui": "D000090983",
+                            "label": "2019-nCoV Vaccine mRNA-1273",
+                            "trees": [
+                              "D12.776.828.868.228.500.500",
+                              "D20.215.894.865.450.500.500",
+                              "D20.215.894.899.085.250",
+                              "D23.050.865.450.500.500"
+                            ]
+                          },
+                          {
+                            "dui": "D059365",
+                            "label": "Nonsense Mediated mRNA Decay",
+                            "trees": [
+                              "G02.111.760.112",
+                              "G02.111.780.500",
+                              "G03.839.112",
+                              "G05.308.700.112"
+                            ]
+                          },
+                          {
+                            "dui": "D039221",
+                            "label": "mRNA Cleavage and Polyadenylation Factors",
+                            "trees": [
+                              "D12.776.157.725.124",
+                              "D12.776.664.962.444"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D012333"
+                      },
+                      {
+                        "query": "Transcriptomics",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D020869",
+                            "label": "Gene Expression Profiling",
+                            "trees": [
+                              "E05.393.332"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D020869"
+                      }
+                    ],
+                    "freetext": [
+                      "Microglia are the resident immune cells of the central nervous system (CNS) and play a crucial role in maintaining brain homeostasis.",
+                      "In Alzheimer's disease, microglial activation is thought to contribute to neurodegeneration by releasing pro-inflammatory cytokines and promoting neuronal damage.",
+                      "Single-cell RNA sequencing has emerged as a powerful tool for studying microglial heterogeneity and identifying novel biomarkers for Alzheimer's disease."
+                    ]
+                  },
+                  {
+                    "name": "Alzheimer's disease",
+                    "rationale": "Alzheimer's disease is a complex neurodegenerative disorder with a multifactorial pathogenesis. Single-cell RNA sequencing can provide insights into the heterogeneity of microglia in different stages of the disease.",
+                    "mesh": [
+                      {
+                        "query": "Neurodegenerative diseases",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D019636",
+                            "label": "Neurodegenerative Diseases",
+                            "trees": [
+                              "C10.574"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D019636"
+                      },
+                      {
+                        "query": "Cognitive decline",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D060825",
+                            "label": "Cognitive Dysfunction",
+                            "trees": [
+                              "F03.615.250.700"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D060825"
+                      },
+                      {
+                        "query": "Amyloid-beta",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Tau protein",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D016875",
+                            "label": "tau Proteins",
+                            "trees": [
+                              "D12.776.220.600.450.510",
+                              "D12.776.631.560.510"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D016875"
+                      },
+                      {
+                        "query": "Phosphatidylinositol 4,5-bisphosphate (PIP2)",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Mitochondrial dysfunction",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D028361",
+                            "label": "Mitochondrial Diseases",
+                            "trees": [
+                              "C18.452.660"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D028361"
+                      }
+                    ],
+                    "freetext": [
+                      "Alzheimer's disease is a complex neurodegenerative disorder characterized by cognitive decline and memory loss.",
+                      "The pathogenesis of Alzheimer's disease involves the accumulation of amyloid-beta plaques and tau protein tangles, leading to neuronal damage and death.",
+                      "Mitochondrial dysfunction is thought to contribute to the progression of Alzheimer's disease."
+                    ]
+                  },
+                  {
+                    "name": "Single-cell RNA sequencing",
+                    "rationale": "Single-cell RNA sequencing is a powerful tool for studying the heterogeneity of single cells. This technique can provide insights into microglial biology and identify novel biomarkers for Alzheimer's disease.",
+                    "mesh": [
+                      {
+                        "query": "MicroRNA",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D035683",
+                            "label": "MicroRNAs",
+                            "trees": [
+                              "D13.150.650.319",
+                              "D13.444.735.150.319",
+                              "D13.444.735.790.552.500"
+                            ]
+                          },
+                          {
+                            "dui": "D000074166",
+                            "label": "Circulating MicroRNA",
+                            "trees": [
+                              "D13.150.650.319.500",
+                              "D13.444.154.250",
+                              "D13.444.735.150.319.500",
+                              "D13.444.735.790.552.500.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D035683"
+                      },
+                      {
+                        "query": "mRNA",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D012333",
+                            "label": "RNA, Messenger",
+                            "trees": [
+                              "D13.444.735.544"
+                            ]
+                          },
+                          {
+                            "dui": "D000087503",
+                            "label": "mRNA Vaccines",
+                            "trees": [
+                              "D12.776.828.868.228.500",
+                              "D20.215.894.860.900.450",
+                              "D20.215.894.865.450.500",
+                              "D23.050.865.450.500"
+                            ]
+                          },
+                          {
+                            "dui": "D000098556",
+                            "label": "mRNA Guanylyltransferases",
+                            "trees": [
+                              "D08.811.277.352.650.600.800",
+                              "D08.811.913.696.445.018"
+                            ]
+                          },
+                          {
+                            "dui": "D000090983",
+                            "label": "2019-nCoV Vaccine mRNA-1273",
+                            "trees": [
+                              "D12.776.828.868.228.500.500",
+                              "D20.215.894.865.450.500.500",
+                              "D20.215.894.899.085.250",
+                              "D23.050.865.450.500.500"
+                            ]
+                          },
+                          {
+                            "dui": "D059365",
+                            "label": "Nonsense Mediated mRNA Decay",
+                            "trees": [
+                              "G02.111.760.112",
+                              "G02.111.780.500",
+                              "G03.839.112",
+                              "G05.308.700.112"
+                            ]
+                          },
+                          {
+                            "dui": "D039221",
+                            "label": "mRNA Cleavage and Polyadenylation Factors",
+                            "trees": [
+                              "D12.776.157.725.124",
+                              "D12.776.664.962.444"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D012333"
+                      },
+                      {
+                        "query": "Transcriptomics",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D020869",
+                            "label": "Gene Expression Profiling",
+                            "trees": [
+                              "E05.393.332"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D020869"
+                      },
+                      {
+                        "query": "Single-cell analysis",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D059010",
+                            "label": "Single-Cell Analysis",
+                            "trees": [
+                              "E05.242.900"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D059010"
+                      },
+                      {
+                        "query": "Bioinformatics",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D019295",
+                            "label": "Computational Biology",
+                            "trees": [
+                              "H01.158.273.180",
+                              "L01.313.124"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D019295"
+                      }
+                    ],
+                    "freetext": [
+                      "Single-cell RNA sequencing is a powerful tool for studying the heterogeneity of single cells.",
+                      "This technique involves the analysis of RNA sequencing data from individual cells to identify unique gene expression profiles.",
+                      "Single-cell RNA sequencing has emerged as a key component in understanding complex biological systems, including microglia in Alzheimer's disease."
+                    ]
+                  },
+                  {
+                    "name": "MicroRNA",
+                    "rationale": "MicroRNAs are small non-coding RNAs that regulate gene expression by binding to mRNA. In Alzheimer's disease, microRNAs have been shown to play a role in regulating cellular stress responses and promoting neuronal survival.",
+                    "mesh": [
+                      {
+                        "query": "Neurotransmitter regulation",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Neuroprotection",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000066829",
+                            "label": "Neuroprotection",
+                            "trees": [
+                              "G11.561.645"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000066829"
+                      },
+                      {
+                        "query": "Cellular stress response",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "MicroRNAs are small non-coding RNAs that regulate gene expression by binding to messenger RNA (mRNA) and preventing its translation.",
+                      "In Alzheimer's disease, microRNAs have been shown to play a role in regulating cellular stress responses and promoting neuronal survival.",
+                      "MicroRNAs can also be used as biomarkers for diagnosing and monitoring the progression of neurodegenerative diseases like Alzheimer's."
+                    ]
+                  },
+                  {
+                    "name": "mRNA",
+                    "rationale": "mRNA is the primary transcript in eukaryotic cells, responsible for encoding proteins. In Alzheimer's disease, mRNA has been shown to play a role in regulating cellular stress responses and promoting neuronal survival.",
+                    "mesh": [
+                      {
+                        "query": "Gene expression regulation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D005786",
+                            "label": "Gene Expression Regulation",
+                            "trees": [
+                              "G05.308"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D005786"
+                      },
+                      {
+                        "query": "Cellular stress response",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "mRNA is the primary transcript in eukaryotic cells, responsible for encoding proteins.",
+                      "In Alzheimer's disease, mRNA has been shown to play a role in regulating cellular stress responses and promoting neuronal survival.",
+                      "mRNA can also be used as biomarkers for diagnosing and monitoring the progression of neurodegenerative diseases like Alzheimer's."
+                    ]
+                  },
+                  {
+                    "name": "Transcriptomics",
+                    "rationale": "Transcriptomics is the study of the complete set of RNA transcripts in a cell or organism. In Alzheimer's disease, transcriptomics has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                    "mesh": [
+                      {
+                        "query": "Single-cell analysis",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D059010",
+                            "label": "Single-Cell Analysis",
+                            "trees": [
+                              "E05.242.900"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D059010"
+                      },
+                      {
+                        "query": "Bioinformatics",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D019295",
+                            "label": "Computational Biology",
+                            "trees": [
+                              "H01.158.273.180",
+                              "L01.313.124"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D019295"
+                      }
+                    ],
+                    "freetext": [
+                      "Transcriptomics is the study of the complete set of RNA transcripts in a cell or organism.",
+                      "In Alzheimer's disease, transcriptomics has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                      "Transcriptomics can also be used to monitor the progression of neurodegenerative diseases like Alzheimer's."
+                    ]
+                  },
+                  {
+                    "name": "Connectome",
+                    "rationale": "A connectome is the complete map of neural connections within an organism. In Alzheimer's disease, a connectome has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                    "mesh": [
+                      {
+                        "query": "Neuroanatomy",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009445",
+                            "label": "Neuroanatomy",
+                            "trees": [
+                              "H01.158.100.700",
+                              "H01.158.610.060"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009445"
+                      },
+                      {
+                        "query": "Neurophysiology",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009482",
+                            "label": "Neurophysiology",
+                            "trees": [
+                              "H01.158.610.268",
+                              "H01.158.782.562"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009482"
+                      }
+                    ],
+                    "freetext": [
+                      "A connectome is the complete map of neural connections within an organism.",
+                      "In Alzheimer's disease, a connectome has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                      "Connectomes can also be used to monitor the progression of neurodegenerative diseases like Alzheimer's."
+                    ]
+                  },
+                  {
+                    "name": "Optogenetics",
+                    "rationale": "Optogenetics is the use of light to control specific cells or neurons in the nervous system. In Alzheimer's disease, optogenetics has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                    "mesh": [
+                      {
+                        "query": "Neurotransmitter regulation",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Cellular stress response",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "Optogenetics is the use of light to control specific cells or neurons in the nervous system.",
+                      "In Alzheimer's disease, optogenetics has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                      "Optogenetics can also be used to monitor the progression of neurodegenerative diseases like Alzheimer's."
+                    ]
+                  }
+                ],
+                "notes": "Some concepts may overlap or be related, but they are not mutually exclusive. This is an initial decomposition of the research question into orthogonal blocks."
+              }
+            },
+            {
+              "query_hash": "dcf4b165cdfc23fa",
+              "n_concepts": 3,
+              "n_terms": 11,
+              "query": "(\"Neuronal Plasticity\"[MeSH Terms] OR \"single-cell RNA sequencing of microglia in Alzheimer's disease\"[Title/Abstract] OR \"microglial cell heterogeneity and function in AD\"[Title/Abstract] OR \"neuroinflammation and neurodegeneration in AD\"[Title/Abstract]) AND (\"Alzheimer's disease is characterized by progressive neuronal loss and amyloid-beta accumulation, but the role of microglia remains unclear.\"[Title/Abstract] OR \"microglial activation and neuroinflammation contribute to AD progression\"[Title/Abstract] OR \"biomarkers for Alzheimer's disease diagnosis and prognosis\"[Title/Abstract]) AND (\"Synaptic Transmission\"[MeSH Terms] OR \"Microglia are involved in neuronal plasticity and synaptic function, but their mechanisms remain unclear.\"[Title/Abstract] OR \"neuroinflammation and neurodegeneration are key features of AD\"[Title/Abstract] OR \"microglial modulation of neural circuits\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "Microglial cells",
+                    "rationale": "Understanding the role of microglia in Alzheimer's disease requires a comprehensive analysis of their single-cell RNA sequencing profiles.",
+                    "mesh": [
+                      {
+                        "query": "Neuronal plasticity",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009473",
+                            "label": "Neuronal Plasticity",
+                            "trees": [
+                              "G11.561.638"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009473"
+                      },
+                      {
+                        "query": "Microglial activation",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Alzheimer's disease pathology",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "single-cell RNA sequencing of microglia in Alzheimer's disease",
+                      "microglial cell heterogeneity and function in AD",
+                      "neuroinflammation and neurodegeneration in AD"
+                    ]
+                  },
+                  {
+                    "name": "Alzheimer's disease",
+                    "rationale": "Microglia play a critical role in Alzheimer's disease pathology, but their involvement is not well understood.",
+                    "mesh": [
+                      {
+                        "query": "Neuronal loss",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Amyloid-beta deposition",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Tau pathology",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "Alzheimer's disease is characterized by progressive neuronal loss and amyloid-beta accumulation, but the role of microglia remains unclear.",
+                      "microglial activation and neuroinflammation contribute to AD progression",
+                      "biomarkers for Alzheimer's disease diagnosis and prognosis"
+                    ]
+                  },
+                  {
+                    "name": "Neuronal plasticity",
+                    "rationale": "Neuronal plasticity is a hallmark of Alzheimer's disease, but microglia play a crucial role in this process.",
+                    "mesh": [
+                      {
+                        "query": "Synaptic transmission",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009435",
+                            "label": "Synaptic Transmission",
+                            "trees": [
+                              "G02.111.820.850",
+                              "G04.835.850",
+                              "G07.265.880",
+                              "G11.561.830"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009435"
+                      },
+                      {
+                        "query": "Neurotransmitter release",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Neural circuit reorganization",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "Microglia are involved in neuronal plasticity and synaptic function, but their mechanisms remain unclear.",
+                      "neuroinflammation and neurodegeneration are key features of AD",
+                      "microglial modulation of neural circuits"
+                    ]
+                  }
+                ],
+                "notes": "The search should focus on single-cell RNA sequencing studies that investigate microglial cell heterogeneity and function in Alzheimer's disease. The inclusion of MeSH terms will help to identify relevant articles."
+              }
+            },
+            {
+              "query_hash": "6593532ba527fd3e",
+              "n_concepts": 8,
+              "n_terms": 44,
+              "query": "(\"Neuronal Plasticity\"[MeSH Terms] OR \"Alzheimer Disease\"[MeSH Terms] OR \"MicroRNAs\"[MeSH Terms] OR \"RNA, Messenger\"[MeSH Terms] OR \"Gene Expression Profiling\"[MeSH Terms] OR \"Microglia are the resident immune cells of the central nervous system (CNS) and play a crucial role in maintaining brain homeostasis.\"[Title/Abstract] OR \"In Alzheimer's disease, microglial activation is thought to contribute to neurodegeneration by releasing pro-inflammatory cytokines and promoting neuronal damage.\"[Title/Abstract] OR \"Single-cell RNA sequencing has emerged as a powerful tool for studying microglial heterogeneity and identifying novel biomarkers for Alzheimer's disease.\"[Title/Abstract]) AND (\"Neurodegenerative Diseases\"[MeSH Terms] OR \"Cognitive Dysfunction\"[MeSH Terms] OR \"tau Proteins\"[MeSH Terms] OR \"Mitochondrial Diseases\"[MeSH Terms] OR \"Alzheimer's disease is a complex neurodegenerative disorder characterized by cognitive decline and memory loss.\"[Title/Abstract] OR \"The pathogenesis of Alzheimer's disease involves the accumulation of amyloid-beta plaques and tau protein tangles, leading to neuronal damage and death.\"[Title/Abstract] OR \"Mitochondrial dysfunction is thought to contribute to the progression of Alzheimer's disease.\"[Title/Abstract]) AND (\"MicroRNAs\"[MeSH Terms] OR \"RNA, Messenger\"[MeSH Terms] OR \"Gene Expression Profiling\"[MeSH Terms] OR \"Single-Cell Analysis\"[MeSH Terms] OR \"Computational Biology\"[MeSH Terms] OR \"Single-cell RNA sequencing is a powerful tool for studying the heterogeneity of single cells.\"[Title/Abstract] OR \"This technique involves the analysis of RNA sequencing data from individual cells to identify unique gene expression profiles.\"[Title/Abstract] OR \"Single-cell RNA sequencing has emerged as a key component in understanding complex biological systems, including microglia in Alzheimer's disease.\"[Title/Abstract]) AND (\"Neuroprotection\"[MeSH Terms] OR \"MicroRNAs are small non-coding RNAs that regulate gene expression by binding to messenger RNA (mRNA) and preventing its translation.\"[Title/Abstract] OR \"In Alzheimer's disease, microRNAs have been shown to play a role in regulating cellular stress responses and promoting neuronal survival.\"[Title/Abstract] OR \"MicroRNAs can also be used as biomarkers for diagnosing and monitoring the progression of neurodegenerative diseases like Alzheimer's.\"[Title/Abstract]) AND (\"Gene Expression Regulation\"[MeSH Terms] OR \"mRNA is the primary transcript in eukaryotic cells, responsible for encoding proteins.\"[Title/Abstract] OR \"In Alzheimer's disease, mRNA has been shown to play a role in regulating cellular stress responses and promoting neuronal survival.\"[Title/Abstract] OR \"mRNA can also be used as biomarkers for diagnosing and monitoring the progression of neurodegenerative diseases like Alzheimer's.\"[Title/Abstract]) AND (\"Single-Cell Analysis\"[MeSH Terms] OR \"Computational Biology\"[MeSH Terms] OR \"Transcriptomics is the study of the complete set of RNA transcripts in a cell or organism.\"[Title/Abstract] OR \"In Alzheimer's disease, transcriptomics has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.\"[Title/Abstract] OR \"Transcriptomics can also be used to monitor the progression of neurodegenerative diseases like Alzheimer's.\"[Title/Abstract]) AND (\"Neuroanatomy\"[MeSH Terms] OR \"Neurophysiology\"[MeSH Terms] OR \"A connectome is the complete map of neural connections within an organism.\"[Title/Abstract] OR \"In Alzheimer's disease, a connectome has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.\"[Title/Abstract] OR \"Connectomes can also be used to monitor the progression of neurodegenerative diseases like Alzheimer's.\"[Title/Abstract]) AND (\"Optogenetics is the use of light to control specific cells or neurons in the nervous system.\"[Title/Abstract] OR \"In Alzheimer's disease, optogenetics has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.\"[Title/Abstract] OR \"Optogenetics can also be used to monitor the progression of neurodegenerative diseases like Alzheimer's.\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "Microglial cells",
+                    "rationale": "Microglia are the primary immune cells in the CNS, and their dysfunction is thought to contribute to neurodegeneration in Alzheimer's disease. Single-cell RNA sequencing can provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                    "mesh": [
+                      {
+                        "query": "Neuronal plasticity",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009473",
+                            "label": "Neuronal Plasticity",
+                            "trees": [
+                              "G11.561.638"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009473"
+                      },
+                      {
+                        "query": "Alzheimer's disease",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D000544",
+                            "label": "Alzheimer Disease",
+                            "trees": [
+                              "C10.228.140.380.100",
+                              "C10.574.945.249",
+                              "F03.615.400.100"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000544"
+                      },
+                      {
+                        "query": "Single-cell RNA sequencing",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "MicroRNA",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D035683",
+                            "label": "MicroRNAs",
+                            "trees": [
+                              "D13.150.650.319",
+                              "D13.444.735.150.319",
+                              "D13.444.735.790.552.500"
+                            ]
+                          },
+                          {
+                            "dui": "D000074166",
+                            "label": "Circulating MicroRNA",
+                            "trees": [
+                              "D13.150.650.319.500",
+                              "D13.444.154.250",
+                              "D13.444.735.150.319.500",
+                              "D13.444.735.790.552.500.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D035683"
+                      },
+                      {
+                        "query": "mRNA",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D012333",
+                            "label": "RNA, Messenger",
+                            "trees": [
+                              "D13.444.735.544"
+                            ]
+                          },
+                          {
+                            "dui": "D000087503",
+                            "label": "mRNA Vaccines",
+                            "trees": [
+                              "D12.776.828.868.228.500",
+                              "D20.215.894.860.900.450",
+                              "D20.215.894.865.450.500",
+                              "D23.050.865.450.500"
+                            ]
+                          },
+                          {
+                            "dui": "D000098556",
+                            "label": "mRNA Guanylyltransferases",
+                            "trees": [
+                              "D08.811.277.352.650.600.800",
+                              "D08.811.913.696.445.018"
+                            ]
+                          },
+                          {
+                            "dui": "D000090983",
+                            "label": "2019-nCoV Vaccine mRNA-1273",
+                            "trees": [
+                              "D12.776.828.868.228.500.500",
+                              "D20.215.894.865.450.500.500",
+                              "D20.215.894.899.085.250",
+                              "D23.050.865.450.500.500"
+                            ]
+                          },
+                          {
+                            "dui": "D059365",
+                            "label": "Nonsense Mediated mRNA Decay",
+                            "trees": [
+                              "G02.111.760.112",
+                              "G02.111.780.500",
+                              "G03.839.112",
+                              "G05.308.700.112"
+                            ]
+                          },
+                          {
+                            "dui": "D039221",
+                            "label": "mRNA Cleavage and Polyadenylation Factors",
+                            "trees": [
+                              "D12.776.157.725.124",
+                              "D12.776.664.962.444"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D012333"
+                      },
+                      {
+                        "query": "Transcriptomics",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D020869",
+                            "label": "Gene Expression Profiling",
+                            "trees": [
+                              "E05.393.332"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D020869"
+                      }
+                    ],
+                    "freetext": [
+                      "Microglia are the resident immune cells of the central nervous system (CNS) and play a crucial role in maintaining brain homeostasis.",
+                      "In Alzheimer's disease, microglial activation is thought to contribute to neurodegeneration by releasing pro-inflammatory cytokines and promoting neuronal damage.",
+                      "Single-cell RNA sequencing has emerged as a powerful tool for studying microglial heterogeneity and identifying novel biomarkers for Alzheimer's disease."
+                    ]
+                  },
+                  {
+                    "name": "Alzheimer's disease",
+                    "rationale": "Alzheimer's disease is a complex neurodegenerative disorder with a multifactorial pathogenesis. Single-cell RNA sequencing can provide insights into the heterogeneity of microglia in different stages of the disease.",
+                    "mesh": [
+                      {
+                        "query": "Neurodegenerative diseases",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D019636",
+                            "label": "Neurodegenerative Diseases",
+                            "trees": [
+                              "C10.574"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D019636"
+                      },
+                      {
+                        "query": "Cognitive decline",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D060825",
+                            "label": "Cognitive Dysfunction",
+                            "trees": [
+                              "F03.615.250.700"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D060825"
+                      },
+                      {
+                        "query": "Amyloid-beta",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Tau protein",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D016875",
+                            "label": "tau Proteins",
+                            "trees": [
+                              "D12.776.220.600.450.510",
+                              "D12.776.631.560.510"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D016875"
+                      },
+                      {
+                        "query": "Phosphatidylinositol 4,5-bisphosphate (PIP2)",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Mitochondrial dysfunction",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D028361",
+                            "label": "Mitochondrial Diseases",
+                            "trees": [
+                              "C18.452.660"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D028361"
+                      }
+                    ],
+                    "freetext": [
+                      "Alzheimer's disease is a complex neurodegenerative disorder characterized by cognitive decline and memory loss.",
+                      "The pathogenesis of Alzheimer's disease involves the accumulation of amyloid-beta plaques and tau protein tangles, leading to neuronal damage and death.",
+                      "Mitochondrial dysfunction is thought to contribute to the progression of Alzheimer's disease."
+                    ]
+                  },
+                  {
+                    "name": "Single-cell RNA sequencing",
+                    "rationale": "Single-cell RNA sequencing is a powerful tool for studying the heterogeneity of single cells. This technique can provide insights into microglial biology and identify novel biomarkers for Alzheimer's disease.",
+                    "mesh": [
+                      {
+                        "query": "MicroRNA",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D035683",
+                            "label": "MicroRNAs",
+                            "trees": [
+                              "D13.150.650.319",
+                              "D13.444.735.150.319",
+                              "D13.444.735.790.552.500"
+                            ]
+                          },
+                          {
+                            "dui": "D000074166",
+                            "label": "Circulating MicroRNA",
+                            "trees": [
+                              "D13.150.650.319.500",
+                              "D13.444.154.250",
+                              "D13.444.735.150.319.500",
+                              "D13.444.735.790.552.500.500"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D035683"
+                      },
+                      {
+                        "query": "mRNA",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D012333",
+                            "label": "RNA, Messenger",
+                            "trees": [
+                              "D13.444.735.544"
+                            ]
+                          },
+                          {
+                            "dui": "D000087503",
+                            "label": "mRNA Vaccines",
+                            "trees": [
+                              "D12.776.828.868.228.500",
+                              "D20.215.894.860.900.450",
+                              "D20.215.894.865.450.500",
+                              "D23.050.865.450.500"
+                            ]
+                          },
+                          {
+                            "dui": "D000098556",
+                            "label": "mRNA Guanylyltransferases",
+                            "trees": [
+                              "D08.811.277.352.650.600.800",
+                              "D08.811.913.696.445.018"
+                            ]
+                          },
+                          {
+                            "dui": "D000090983",
+                            "label": "2019-nCoV Vaccine mRNA-1273",
+                            "trees": [
+                              "D12.776.828.868.228.500.500",
+                              "D20.215.894.865.450.500.500",
+                              "D20.215.894.899.085.250",
+                              "D23.050.865.450.500.500"
+                            ]
+                          },
+                          {
+                            "dui": "D059365",
+                            "label": "Nonsense Mediated mRNA Decay",
+                            "trees": [
+                              "G02.111.760.112",
+                              "G02.111.780.500",
+                              "G03.839.112",
+                              "G05.308.700.112"
+                            ]
+                          },
+                          {
+                            "dui": "D039221",
+                            "label": "mRNA Cleavage and Polyadenylation Factors",
+                            "trees": [
+                              "D12.776.157.725.124",
+                              "D12.776.664.962.444"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D012333"
+                      },
+                      {
+                        "query": "Transcriptomics",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D020869",
+                            "label": "Gene Expression Profiling",
+                            "trees": [
+                              "E05.393.332"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D020869"
+                      },
+                      {
+                        "query": "Single-cell analysis",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D059010",
+                            "label": "Single-Cell Analysis",
+                            "trees": [
+                              "E05.242.900"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D059010"
+                      },
+                      {
+                        "query": "Bioinformatics",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D019295",
+                            "label": "Computational Biology",
+                            "trees": [
+                              "H01.158.273.180",
+                              "L01.313.124"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D019295"
+                      }
+                    ],
+                    "freetext": [
+                      "Single-cell RNA sequencing is a powerful tool for studying the heterogeneity of single cells.",
+                      "This technique involves the analysis of RNA sequencing data from individual cells to identify unique gene expression profiles.",
+                      "Single-cell RNA sequencing has emerged as a key component in understanding complex biological systems, including microglia in Alzheimer's disease."
+                    ]
+                  },
+                  {
+                    "name": "MicroRNA",
+                    "rationale": "MicroRNAs are small non-coding RNAs that regulate gene expression by binding to mRNA. In Alzheimer's disease, microRNAs have been shown to play a role in regulating cellular stress responses and promoting neuronal survival.",
+                    "mesh": [
+                      {
+                        "query": "Neurotransmitter regulation",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Neuroprotection",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000066829",
+                            "label": "Neuroprotection",
+                            "trees": [
+                              "G11.561.645"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000066829"
+                      },
+                      {
+                        "query": "Cellular stress response",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "MicroRNAs are small non-coding RNAs that regulate gene expression by binding to messenger RNA (mRNA) and preventing its translation.",
+                      "In Alzheimer's disease, microRNAs have been shown to play a role in regulating cellular stress responses and promoting neuronal survival.",
+                      "MicroRNAs can also be used as biomarkers for diagnosing and monitoring the progression of neurodegenerative diseases like Alzheimer's."
+                    ]
+                  },
+                  {
+                    "name": "mRNA",
+                    "rationale": "mRNA is the primary transcript in eukaryotic cells, responsible for encoding proteins. In Alzheimer's disease, mRNA has been shown to play a role in regulating cellular stress responses and promoting neuronal survival.",
+                    "mesh": [
+                      {
+                        "query": "Gene expression regulation",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D005786",
+                            "label": "Gene Expression Regulation",
+                            "trees": [
+                              "G05.308"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D005786"
+                      },
+                      {
+                        "query": "Cellular stress response",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "mRNA is the primary transcript in eukaryotic cells, responsible for encoding proteins.",
+                      "In Alzheimer's disease, mRNA has been shown to play a role in regulating cellular stress responses and promoting neuronal survival.",
+                      "mRNA can also be used as biomarkers for diagnosing and monitoring the progression of neurodegenerative diseases like Alzheimer's."
+                    ]
+                  },
+                  {
+                    "name": "Transcriptomics",
+                    "rationale": "Transcriptomics is the study of the complete set of RNA transcripts in a cell or organism. In Alzheimer's disease, transcriptomics has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                    "mesh": [
+                      {
+                        "query": "Single-cell analysis",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D059010",
+                            "label": "Single-Cell Analysis",
+                            "trees": [
+                              "E05.242.900"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D059010"
+                      },
+                      {
+                        "query": "Bioinformatics",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D019295",
+                            "label": "Computational Biology",
+                            "trees": [
+                              "H01.158.273.180",
+                              "L01.313.124"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D019295"
+                      }
+                    ],
+                    "freetext": [
+                      "Transcriptomics is the study of the complete set of RNA transcripts in a cell or organism.",
+                      "In Alzheimer's disease, transcriptomics has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                      "Transcriptomics can also be used to monitor the progression of neurodegenerative diseases like Alzheimer's."
+                    ]
+                  },
+                  {
+                    "name": "Connectome",
+                    "rationale": "A connectome is the complete map of neural connections within an organism. In Alzheimer's disease, a connectome has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                    "mesh": [
+                      {
+                        "query": "Neuroanatomy",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009445",
+                            "label": "Neuroanatomy",
+                            "trees": [
+                              "H01.158.100.700",
+                              "H01.158.610.060"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009445"
+                      },
+                      {
+                        "query": "Neurophysiology",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009482",
+                            "label": "Neurophysiology",
+                            "trees": [
+                              "H01.158.610.268",
+                              "H01.158.782.562"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009482"
+                      }
+                    ],
+                    "freetext": [
+                      "A connectome is the complete map of neural connections within an organism.",
+                      "In Alzheimer's disease, a connectome has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                      "Connectomes can also be used to monitor the progression of neurodegenerative diseases like Alzheimer's."
+                    ]
+                  },
+                  {
+                    "name": "Optogenetics",
+                    "rationale": "Optogenetics is the use of light to control specific cells or neurons in the nervous system. In Alzheimer's disease, optogenetics has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                    "mesh": [
+                      {
+                        "query": "Neurotransmitter regulation",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Cellular stress response",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "Optogenetics is the use of light to control specific cells or neurons in the nervous system.",
+                      "In Alzheimer's disease, optogenetics has been shown to provide insights into microglial heterogeneity and identify novel biomarkers for this disease.",
+                      "Optogenetics can also be used to monitor the progression of neurodegenerative diseases like Alzheimer's."
+                    ]
+                  }
+                ],
+                "notes": "Some concepts may overlap or be related, but they are not mutually exclusive. This is an initial decomposition of the research question into orthogonal blocks."
+              }
+            },
+            {
+              "query_hash": "dcf4b165cdfc23fa",
+              "n_concepts": 3,
+              "n_terms": 11,
+              "query": "(\"Neuronal Plasticity\"[MeSH Terms] OR \"single-cell RNA sequencing of microglia in Alzheimer's disease\"[Title/Abstract] OR \"microglial cell heterogeneity and function in AD\"[Title/Abstract] OR \"neuroinflammation and neurodegeneration in AD\"[Title/Abstract]) AND (\"Alzheimer's disease is characterized by progressive neuronal loss and amyloid-beta accumulation, but the role of microglia remains unclear.\"[Title/Abstract] OR \"microglial activation and neuroinflammation contribute to AD progression\"[Title/Abstract] OR \"biomarkers for Alzheimer's disease diagnosis and prognosis\"[Title/Abstract]) AND (\"Synaptic Transmission\"[MeSH Terms] OR \"Microglia are involved in neuronal plasticity and synaptic function, but their mechanisms remain unclear.\"[Title/Abstract] OR \"neuroinflammation and neurodegeneration are key features of AD\"[Title/Abstract] OR \"microglial modulation of neural circuits\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "Microglial cells",
+                    "rationale": "Understanding the role of microglia in Alzheimer's disease requires a comprehensive analysis of their single-cell RNA sequencing profiles.",
+                    "mesh": [
+                      {
+                        "query": "Neuronal plasticity",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009473",
+                            "label": "Neuronal Plasticity",
+                            "trees": [
+                              "G11.561.638"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009473"
+                      },
+                      {
+                        "query": "Microglial activation",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Alzheimer's disease pathology",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "single-cell RNA sequencing of microglia in Alzheimer's disease",
+                      "microglial cell heterogeneity and function in AD",
+                      "neuroinflammation and neurodegeneration in AD"
+                    ]
+                  },
+                  {
+                    "name": "Alzheimer's disease",
+                    "rationale": "Microglia play a critical role in Alzheimer's disease pathology, but their involvement is not well understood.",
+                    "mesh": [
+                      {
+                        "query": "Neuronal loss",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Amyloid-beta deposition",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Tau pathology",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "Alzheimer's disease is characterized by progressive neuronal loss and amyloid-beta accumulation, but the role of microglia remains unclear.",
+                      "microglial activation and neuroinflammation contribute to AD progression",
+                      "biomarkers for Alzheimer's disease diagnosis and prognosis"
+                    ]
+                  },
+                  {
+                    "name": "Neuronal plasticity",
+                    "rationale": "Neuronal plasticity is a hallmark of Alzheimer's disease, but microglia play a crucial role in this process.",
+                    "mesh": [
+                      {
+                        "query": "Synaptic transmission",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D009435",
+                            "label": "Synaptic Transmission",
+                            "trees": [
+                              "G02.111.820.850",
+                              "G04.835.850",
+                              "G07.265.880",
+                              "G11.561.830"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D009435"
+                      },
+                      {
+                        "query": "Neurotransmitter release",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Neural circuit reorganization",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      }
+                    ],
+                    "freetext": [
+                      "Microglia are involved in neuronal plasticity and synaptic function, but their mechanisms remain unclear.",
+                      "neuroinflammation and neurodegeneration are key features of AD",
+                      "microglial modulation of neural circuits"
+                    ]
+                  }
+                ],
+                "notes": "The search should focus on single-cell RNA sequencing studies that investigate microglial cell heterogeneity and function in Alzheimer's disease. The inclusion of MeSH terms will help to identify relevant articles."
+              }
+            }
+          ]
+        },
+        {
+          "question": "CRISPR-Cas9 off-target effects detection methods",
+          "domains": [
+            "bioinformatics"
+          ],
+          "ok_runs": 5,
+          "errors": [],
+          "scores": {
+            "map_raw": {
+              "runs": 5,
+              "distinct": 2,
+              "modal_count": 4,
+              "determinism": 0.8,
+              "fully_deterministic": false
+            },
+            "map_content": {
+              "runs": 5,
+              "distinct": 2,
+              "modal_count": 4,
+              "determinism": 0.8,
+              "fully_deterministic": false
+            },
+            "query": {
+              "runs": 5,
+              "distinct": 2,
+              "modal_count": 4,
+              "determinism": 0.8,
+              "fully_deterministic": false
+            },
+            "query_hash": {
+              "runs": 5,
+              "distinct": 2,
+              "modal_count": 4,
+              "determinism": 0.8,
+              "fully_deterministic": false
+            }
+          },
+          "distinct_hashes": [
+            "0287b803bd174254",
+            "2ef19d3b6f671219"
+          ],
+          "sample_query": "(\"Gene Editing\"[MeSH Terms] OR \"Precision Medicine\"[MeSH Terms] OR \"off-target effects detection\"[Title/Abstract] OR \"CRISPR-Cas9 off-targets\"[Title/Abstract] OR \"precision medicine\"[Title/Abstract] OR \"gene editing\"[Title/Abstract] OR \"genome engineering\"[Title/Abstract]) AND (\"Genomics\"[MeSH Terms] OR \"Computational Biology\"[MeSH Terms] OR \"bioinformatics tools\"[Title/Abstract] OR \"genomic analysis\"[Title/Abstract] OR \"precision medicine\"[Title/Abstract] OR \"CRISPR-Cas9\"[Title/Abstract] OR \"off-target effects\"[Title/Abstract]) AND (\"Biotechnology\"[MeSH Terms] OR \"synthetic biology\"[Title/Abstract] OR \"biological engineering\"[Title/Abstract] OR \"precision medicine\"[Title/Abstract] OR \"CRISPR-Cas9\"[Title/Abstract] OR \"off-target effects\"[Title/Abstract]) AND (\"Machine Learning\"[MeSH Terms] OR \"Data Mining\"[MeSH Terms] OR \"computational methods\"[Title/Abstract] OR \"machine learning\"[Title/Abstract] OR \"data mining\"[Title/Abstract] OR \"precision medicine\"[Title/Abstract] OR \"CRISPR-Cas9\"[Title/Abstract])",
+          "runs": [
+            {
+              "query_hash": "0287b803bd174254",
+              "n_concepts": 4,
+              "n_terms": 27,
+              "query": "(\"Gene Editing\"[MeSH Terms] OR \"Precision Medicine\"[MeSH Terms] OR \"off-target effects detection\"[Title/Abstract] OR \"CRISPR-Cas9 off-targets\"[Title/Abstract] OR \"precision medicine\"[Title/Abstract] OR \"gene editing\"[Title/Abstract] OR \"genome engineering\"[Title/Abstract]) AND (\"Genomics\"[MeSH Terms] OR \"Computational Biology\"[MeSH Terms] OR \"bioinformatics tools\"[Title/Abstract] OR \"genomic analysis\"[Title/Abstract] OR \"precision medicine\"[Title/Abstract] OR \"CRISPR-Cas9\"[Title/Abstract] OR \"off-target effects\"[Title/Abstract]) AND (\"Biotechnology\"[MeSH Terms] OR \"synthetic biology\"[Title/Abstract] OR \"biological engineering\"[Title/Abstract] OR \"precision medicine\"[Title/Abstract] OR \"CRISPR-Cas9\"[Title/Abstract] OR \"off-target effects\"[Title/Abstract]) AND (\"Machine Learning\"[MeSH Terms] OR \"Data Mining\"[MeSH Terms] OR \"computational methods\"[Title/Abstract] OR \"machine learning\"[Title/Abstract] OR \"data mining\"[Title/Abstract] OR \"precision medicine\"[Title/Abstract] OR \"CRISPR-Cas9\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "CRISPR-Cas9",
+                    "rationale": "Detection of unintended CRISPR-Cas9 modifications, including off-target effects.",
+                    "mesh": [
+                      {
+                        "query": "Gene Editing",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000072669",
+                            "label": "Gene Editing",
+                            "trees": [
+                              "E05.393.420.270"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000072669"
+                      },
+                      {
+                        "query": "Genome Engineering",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Precision Medicine",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D057285",
+                            "label": "Precision Medicine",
+                            "trees": [
+                              "E02.782",
+                              "H02.403.200.700"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D057285"
+                      }
+                    ],
+                    "freetext": [
+                      "off-target effects detection",
+                      "CRISPR-Cas9 off-targets",
+                      "precision medicine",
+                      "gene editing",
+                      "genome engineering"
+                    ]
+                  },
+                  {
+                    "name": "Bioinformatics",
+                    "rationale": "Development of methods to detect and characterize off-target effects in CRISPR-Cas9 genome editing.",
+                    "mesh": [
+                      {
+                        "query": "Genomics",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D023281",
+                            "label": "Genomics",
+                            "trees": [
+                              "H01.158.273.180.350",
+                              "H01.158.273.343.350"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D023281"
+                      },
+                      {
+                        "query": "Computational Biology",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D019295",
+                            "label": "Computational Biology",
+                            "trees": [
+                              "H01.158.273.180",
+                              "L01.313.124"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D019295"
+                      }
+                    ],
+                    "freetext": [
+                      "bioinformatics tools",
+                      "genomic analysis",
+                      "precision medicine",
+                      "CRISPR-Cas9",
+                      "off-target effects"
+                    ]
+                  },
+                  {
+                    "name": "Synthetic Biology",
+                    "rationale": "Development of methods to detect and characterize off-target effects in CRISPR-Cas9 genome editing, with implications for synthetic biology.",
+                    "mesh": [
+                      {
+                        "query": "Genome Engineering",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Biotechnology",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D001709",
+                            "label": "Biotechnology",
+                            "trees": [
+                              "H01.158.550",
+                              "J01.897.120"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D001709"
+                      }
+                    ],
+                    "freetext": [
+                      "synthetic biology",
+                      "biological engineering",
+                      "precision medicine",
+                      "CRISPR-Cas9",
+                      "off-target effects"
+                    ]
+                  },
+                  {
+                    "name": "Computational Methods",
+                    "rationale": "Development of computational methods to detect and characterize off-target effects in CRISPR-Cas9 genome editing.",
+                    "mesh": [
+                      {
+                        "query": "Machine Learning",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000069550",
+                            "label": "Machine Learning",
+                            "trees": [
+                              "G17.035.250.500",
+                              "L01.224.050.375.530"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000069550"
+                      },
+                      {
+                        "query": "Data Mining",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D057225",
+                            "label": "Data Mining",
+                            "trees": [
+                              "L01.313.500.750.280.199",
+                              "L01.470.625"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D057225"
+                      }
+                    ],
+                    "freetext": [
+                      "computational methods",
+                      "machine learning",
+                      "data mining",
+                      "precision medicine",
+                      "CRISPR-Cas9"
+                    ]
+                  }
+                ],
+                "notes": "The search should include studies that investigate the detection of off-target effects using various bioinformatics tools, including but not limited to: CRISPR-Cas9 off-target prediction tools, genomic analysis software, and machine learning algorithms. The search should also include studies that investigate the characterization of off-target effects, including their impact on gene function and protein structure."
+              }
+            },
+            {
+              "query_hash": "2ef19d3b6f671219",
+              "n_concepts": 3,
+              "n_terms": 21,
+              "query": "(\"Gene Editing\"[MeSH Terms] OR \"Precision Medicine\"[MeSH Terms] OR \"off-target effects detection\"[Title/Abstract] OR \"CRISPR-Cas9 off-targets\"[Title/Abstract] OR \"precision medicine\"[Title/Abstract] OR \"gene editing\"[Title/Abstract] OR \"genome engineering\"[Title/Abstract]) AND (\"Gene Expression\"[MeSH Terms] OR \"Molecular Mechanisms of Pharmacological Action\"[MeSH Terms] OR \"genomic instability\"[Title/Abstract] OR \"molecular heterogeneity\"[Title/Abstract] OR \"epigenetic changes\"[Title/Abstract] OR \"gene regulation\"[Title/Abstract] OR \"molecular interactions\"[Title/Abstract]) AND (\"Gene Editing\"[MeSH Terms] OR \"Precision Medicine\"[MeSH Terms] OR \"off-target modifications\"[Title/Abstract] OR \"molecular unintended effects\"[Title/Abstract] OR \"genomic alterations\"[Title/Abstract] OR \"gene regulation changes\"[Title/Abstract] OR \"precision medicine applications\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "CRISPR-Cas9",
+                    "rationale": "The CRISPR-Cas9 system is a powerful tool for gene editing, but its off-target effects can have unintended consequences. Detecting these effects is crucial for ensuring the safety and efficacy of CRISPR-based therapies.",
+                    "mesh": [
+                      {
+                        "query": "Gene Editing",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000072669",
+                            "label": "Gene Editing",
+                            "trees": [
+                              "E05.393.420.270"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000072669"
+                      },
+                      {
+                        "query": "Genome Engineering",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Precision Medicine",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D057285",
+                            "label": "Precision Medicine",
+                            "trees": [
+                              "E02.782",
+                              "H02.403.200.700"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D057285"
+                      }
+                    ],
+                    "freetext": [
+                      "off-target effects detection",
+                      "CRISPR-Cas9 off-targets",
+                      "precision medicine",
+                      "gene editing",
+                      "genome engineering"
+                    ]
+                  },
+                  {
+                    "name": "off-target effects",
+                    "rationale": "Off-target effects refer to unintended modifications made by CRISPR-Cas9 to the genome, which can have significant consequences for gene function and expression.",
+                    "mesh": [
+                      {
+                        "query": "Genetic Variability",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Gene Expression",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D015870",
+                            "label": "Gene Expression",
+                            "trees": [
+                              "G05.297"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D015870"
+                      },
+                      {
+                        "query": "Molecular Mechanisms",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D045504",
+                            "label": "Molecular Mechanisms of Pharmacological Action",
+                            "trees": [
+                              "D27.505.519"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D045504"
+                      }
+                    ],
+                    "freetext": [
+                      "genomic instability",
+                      "molecular heterogeneity",
+                      "epigenetic changes",
+                      "gene regulation",
+                      "molecular interactions"
+                    ]
+                  },
+                  {
+                    "name": "CRISPR-Cas9 off-targets",
+                    "rationale": "The detection of CRISPR-Cas9 off-targets is critical for understanding the safety and efficacy of these therapies, as well as for developing new strategies to mitigate their negative consequences.",
+                    "mesh": [
+                      {
+                        "query": "Gene Editing",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000072669",
+                            "label": "Gene Editing",
+                            "trees": [
+                              "E05.393.420.270"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000072669"
+                      },
+                      {
+                        "query": "Genome Engineering",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Precision Medicine",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D057285",
+                            "label": "Precision Medicine",
+                            "trees": [
+                              "E02.782",
+                              "H02.403.200.700"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D057285"
+                      }
+                    ],
+                    "freetext": [
+                      "off-target modifications",
+                      "molecular unintended effects",
+                      "genomic alterations",
+                      "gene regulation changes",
+                      "precision medicine applications"
+                    ]
+                  }
+                ],
+                "notes": "Some methods may be more suitable than others for detecting CRISPR-Cas9 off-target effects. For example, some studies have used CRISPR-Cas9 off-target detection kits that can identify specific modifications, while others have employed computational approaches to predict off-target effects based on the sequence of the target gene."
+              }
+            },
+            {
+              "query_hash": "2ef19d3b6f671219",
+              "n_concepts": 3,
+              "n_terms": 21,
+              "query": "(\"Gene Editing\"[MeSH Terms] OR \"Precision Medicine\"[MeSH Terms] OR \"off-target effects detection\"[Title/Abstract] OR \"CRISPR-Cas9 off-targets\"[Title/Abstract] OR \"precision medicine\"[Title/Abstract] OR \"gene editing\"[Title/Abstract] OR \"genome engineering\"[Title/Abstract]) AND (\"Gene Expression\"[MeSH Terms] OR \"Molecular Mechanisms of Pharmacological Action\"[MeSH Terms] OR \"genomic instability\"[Title/Abstract] OR \"molecular heterogeneity\"[Title/Abstract] OR \"epigenetic changes\"[Title/Abstract] OR \"gene regulation\"[Title/Abstract] OR \"molecular interactions\"[Title/Abstract]) AND (\"Gene Editing\"[MeSH Terms] OR \"Precision Medicine\"[MeSH Terms] OR \"off-target modifications\"[Title/Abstract] OR \"molecular unintended effects\"[Title/Abstract] OR \"genomic alterations\"[Title/Abstract] OR \"gene regulation changes\"[Title/Abstract] OR \"precision medicine applications\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "CRISPR-Cas9",
+                    "rationale": "The CRISPR-Cas9 system is a powerful tool for gene editing, but its off-target effects can have unintended consequences. Detecting these effects is crucial for ensuring the safety and efficacy of CRISPR-based therapies.",
+                    "mesh": [
+                      {
+                        "query": "Gene Editing",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000072669",
+                            "label": "Gene Editing",
+                            "trees": [
+                              "E05.393.420.270"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000072669"
+                      },
+                      {
+                        "query": "Genome Engineering",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Precision Medicine",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D057285",
+                            "label": "Precision Medicine",
+                            "trees": [
+                              "E02.782",
+                              "H02.403.200.700"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D057285"
+                      }
+                    ],
+                    "freetext": [
+                      "off-target effects detection",
+                      "CRISPR-Cas9 off-targets",
+                      "precision medicine",
+                      "gene editing",
+                      "genome engineering"
+                    ]
+                  },
+                  {
+                    "name": "off-target effects",
+                    "rationale": "Off-target effects refer to unintended modifications made by CRISPR-Cas9 to the genome, which can have significant consequences for gene function and expression.",
+                    "mesh": [
+                      {
+                        "query": "Genetic Variability",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Gene Expression",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D015870",
+                            "label": "Gene Expression",
+                            "trees": [
+                              "G05.297"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D015870"
+                      },
+                      {
+                        "query": "Molecular Mechanisms",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D045504",
+                            "label": "Molecular Mechanisms of Pharmacological Action",
+                            "trees": [
+                              "D27.505.519"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D045504"
+                      }
+                    ],
+                    "freetext": [
+                      "genomic instability",
+                      "molecular heterogeneity",
+                      "epigenetic changes",
+                      "gene regulation",
+                      "molecular interactions"
+                    ]
+                  },
+                  {
+                    "name": "CRISPR-Cas9 off-targets",
+                    "rationale": "The detection of CRISPR-Cas9 off-targets is critical for understanding the safety and efficacy of these therapies, as well as for developing new strategies to mitigate their negative consequences.",
+                    "mesh": [
+                      {
+                        "query": "Gene Editing",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000072669",
+                            "label": "Gene Editing",
+                            "trees": [
+                              "E05.393.420.270"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000072669"
+                      },
+                      {
+                        "query": "Genome Engineering",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Precision Medicine",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D057285",
+                            "label": "Precision Medicine",
+                            "trees": [
+                              "E02.782",
+                              "H02.403.200.700"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D057285"
+                      }
+                    ],
+                    "freetext": [
+                      "off-target modifications",
+                      "molecular unintended effects",
+                      "genomic alterations",
+                      "gene regulation changes",
+                      "precision medicine applications"
+                    ]
+                  }
+                ],
+                "notes": "Some methods may be more suitable than others for detecting CRISPR-Cas9 off-target effects. For example, some studies have used CRISPR-Cas9 off-target detection kits that can identify specific modifications, while others have employed computational approaches to predict off-target effects based on the sequence of the target gene."
+              }
+            },
+            {
+              "query_hash": "2ef19d3b6f671219",
+              "n_concepts": 3,
+              "n_terms": 21,
+              "query": "(\"Gene Editing\"[MeSH Terms] OR \"Precision Medicine\"[MeSH Terms] OR \"off-target effects detection\"[Title/Abstract] OR \"CRISPR-Cas9 off-targets\"[Title/Abstract] OR \"precision medicine\"[Title/Abstract] OR \"gene editing\"[Title/Abstract] OR \"genome engineering\"[Title/Abstract]) AND (\"Gene Expression\"[MeSH Terms] OR \"Molecular Mechanisms of Pharmacological Action\"[MeSH Terms] OR \"genomic instability\"[Title/Abstract] OR \"molecular heterogeneity\"[Title/Abstract] OR \"epigenetic changes\"[Title/Abstract] OR \"gene regulation\"[Title/Abstract] OR \"molecular interactions\"[Title/Abstract]) AND (\"Gene Editing\"[MeSH Terms] OR \"Precision Medicine\"[MeSH Terms] OR \"off-target modifications\"[Title/Abstract] OR \"molecular unintended effects\"[Title/Abstract] OR \"genomic alterations\"[Title/Abstract] OR \"gene regulation changes\"[Title/Abstract] OR \"precision medicine applications\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "CRISPR-Cas9",
+                    "rationale": "The CRISPR-Cas9 system is a powerful tool for gene editing, but its off-target effects can have unintended consequences. Detecting these effects is crucial for ensuring the safety and efficacy of CRISPR-based therapies.",
+                    "mesh": [
+                      {
+                        "query": "Gene Editing",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000072669",
+                            "label": "Gene Editing",
+                            "trees": [
+                              "E05.393.420.270"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000072669"
+                      },
+                      {
+                        "query": "Genome Engineering",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Precision Medicine",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D057285",
+                            "label": "Precision Medicine",
+                            "trees": [
+                              "E02.782",
+                              "H02.403.200.700"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D057285"
+                      }
+                    ],
+                    "freetext": [
+                      "off-target effects detection",
+                      "CRISPR-Cas9 off-targets",
+                      "precision medicine",
+                      "gene editing",
+                      "genome engineering"
+                    ]
+                  },
+                  {
+                    "name": "off-target effects",
+                    "rationale": "Off-target effects refer to unintended modifications made by CRISPR-Cas9 to the genome, which can have significant consequences for gene function and expression.",
+                    "mesh": [
+                      {
+                        "query": "Genetic Variability",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Gene Expression",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D015870",
+                            "label": "Gene Expression",
+                            "trees": [
+                              "G05.297"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D015870"
+                      },
+                      {
+                        "query": "Molecular Mechanisms",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D045504",
+                            "label": "Molecular Mechanisms of Pharmacological Action",
+                            "trees": [
+                              "D27.505.519"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D045504"
+                      }
+                    ],
+                    "freetext": [
+                      "genomic instability",
+                      "molecular heterogeneity",
+                      "epigenetic changes",
+                      "gene regulation",
+                      "molecular interactions"
+                    ]
+                  },
+                  {
+                    "name": "CRISPR-Cas9 off-targets",
+                    "rationale": "The detection of CRISPR-Cas9 off-targets is critical for understanding the safety and efficacy of these therapies, as well as for developing new strategies to mitigate their negative consequences.",
+                    "mesh": [
+                      {
+                        "query": "Gene Editing",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000072669",
+                            "label": "Gene Editing",
+                            "trees": [
+                              "E05.393.420.270"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000072669"
+                      },
+                      {
+                        "query": "Genome Engineering",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Precision Medicine",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D057285",
+                            "label": "Precision Medicine",
+                            "trees": [
+                              "E02.782",
+                              "H02.403.200.700"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D057285"
+                      }
+                    ],
+                    "freetext": [
+                      "off-target modifications",
+                      "molecular unintended effects",
+                      "genomic alterations",
+                      "gene regulation changes",
+                      "precision medicine applications"
+                    ]
+                  }
+                ],
+                "notes": "Some methods may be more suitable than others for detecting CRISPR-Cas9 off-target effects. For example, some studies have used CRISPR-Cas9 off-target detection kits that can identify specific modifications, while others have employed computational approaches to predict off-target effects based on the sequence of the target gene."
+              }
+            },
+            {
+              "query_hash": "2ef19d3b6f671219",
+              "n_concepts": 3,
+              "n_terms": 21,
+              "query": "(\"Gene Editing\"[MeSH Terms] OR \"Precision Medicine\"[MeSH Terms] OR \"off-target effects detection\"[Title/Abstract] OR \"CRISPR-Cas9 off-targets\"[Title/Abstract] OR \"precision medicine\"[Title/Abstract] OR \"gene editing\"[Title/Abstract] OR \"genome engineering\"[Title/Abstract]) AND (\"Gene Expression\"[MeSH Terms] OR \"Molecular Mechanisms of Pharmacological Action\"[MeSH Terms] OR \"genomic instability\"[Title/Abstract] OR \"molecular heterogeneity\"[Title/Abstract] OR \"epigenetic changes\"[Title/Abstract] OR \"gene regulation\"[Title/Abstract] OR \"molecular interactions\"[Title/Abstract]) AND (\"Gene Editing\"[MeSH Terms] OR \"Precision Medicine\"[MeSH Terms] OR \"off-target modifications\"[Title/Abstract] OR \"molecular unintended effects\"[Title/Abstract] OR \"genomic alterations\"[Title/Abstract] OR \"gene regulation changes\"[Title/Abstract] OR \"precision medicine applications\"[Title/Abstract])",
+              "map": {
+                "concepts": [
+                  {
+                    "name": "CRISPR-Cas9",
+                    "rationale": "The CRISPR-Cas9 system is a powerful tool for gene editing, but its off-target effects can have unintended consequences. Detecting these effects is crucial for ensuring the safety and efficacy of CRISPR-based therapies.",
+                    "mesh": [
+                      {
+                        "query": "Gene Editing",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000072669",
+                            "label": "Gene Editing",
+                            "trees": [
+                              "E05.393.420.270"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000072669"
+                      },
+                      {
+                        "query": "Genome Engineering",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Precision Medicine",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D057285",
+                            "label": "Precision Medicine",
+                            "trees": [
+                              "E02.782",
+                              "H02.403.200.700"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D057285"
+                      }
+                    ],
+                    "freetext": [
+                      "off-target effects detection",
+                      "CRISPR-Cas9 off-targets",
+                      "precision medicine",
+                      "gene editing",
+                      "genome engineering"
+                    ]
+                  },
+                  {
+                    "name": "off-target effects",
+                    "rationale": "Off-target effects refer to unintended modifications made by CRISPR-Cas9 to the genome, which can have significant consequences for gene function and expression.",
+                    "mesh": [
+                      {
+                        "query": "Genetic Variability",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Gene Expression",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D015870",
+                            "label": "Gene Expression",
+                            "trees": [
+                              "G05.297"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D015870"
+                      },
+                      {
+                        "query": "Molecular Mechanisms",
+                        "matched": false,
+                        "options": [
+                          {
+                            "dui": "D045504",
+                            "label": "Molecular Mechanisms of Pharmacological Action",
+                            "trees": [
+                              "D27.505.519"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D045504"
+                      }
+                    ],
+                    "freetext": [
+                      "genomic instability",
+                      "molecular heterogeneity",
+                      "epigenetic changes",
+                      "gene regulation",
+                      "molecular interactions"
+                    ]
+                  },
+                  {
+                    "name": "CRISPR-Cas9 off-targets",
+                    "rationale": "The detection of CRISPR-Cas9 off-targets is critical for understanding the safety and efficacy of these therapies, as well as for developing new strategies to mitigate their negative consequences.",
+                    "mesh": [
+                      {
+                        "query": "Gene Editing",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D000072669",
+                            "label": "Gene Editing",
+                            "trees": [
+                              "E05.393.420.270"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D000072669"
+                      },
+                      {
+                        "query": "Genome Engineering",
+                        "matched": false,
+                        "options": [],
+                        "selected_dui": ""
+                      },
+                      {
+                        "query": "Precision Medicine",
+                        "matched": true,
+                        "options": [
+                          {
+                            "dui": "D057285",
+                            "label": "Precision Medicine",
+                            "trees": [
+                              "E02.782",
+                              "H02.403.200.700"
+                            ]
+                          }
+                        ],
+                        "selected_dui": "D057285"
+                      }
+                    ],
+                    "freetext": [
+                      "off-target modifications",
+                      "molecular unintended effects",
+                      "genomic alterations",
+                      "gene regulation changes",
+                      "precision medicine applications"
+                    ]
+                  }
+                ],
+                "notes": "Some methods may be more suitable than others for detecting CRISPR-Cas9 off-target effects. For example, some studies have used CRISPR-Cas9 off-target detection kits that can identify specific modifications, while others have employed computational approaches to predict off-target effects based on the sequence of the target gene."
+              }
+            }
+          ]
+        }
+      ],
+      "aggregate": {
+        "map_raw": {
+          "mean_determinism": 0.7333,
+          "min_determinism": 0.6,
+          "fully_deterministic_queries": "0/3"
+        },
+        "map_content": {
+          "mean_determinism": 0.7333,
+          "min_determinism": 0.6,
+          "fully_deterministic_queries": "0/3"
+        },
+        "query": {
+          "mean_determinism": 0.7333,
+          "min_determinism": 0.6,
+          "fully_deterministic_queries": "0/3"
+        },
+        "query_hash": {
+          "mean_determinism": 0.7333,
+          "min_determinism": 0.6,
+          "fully_deterministic_queries": "0/3"
+        }
+      }
+    }
+  ],
+  "cross_model": {
+    "per_query": [
+      {
+        "question": "Does optogenetic stimulation of the hippocampus improve memory consolidation in rodent models?",
+        "n_models": 1,
+        "distinct_queries": 1,
+        "agreement": 1.0,
+        "consensus_models": [
+          "llama3.2:1b"
+        ],
+        "outlier_models": []
+      },
+      {
+        "question": "single-cell RNA sequencing of microglia in Alzheimer's disease",
+        "n_models": 1,
+        "distinct_queries": 1,
+        "agreement": 1.0,
+        "consensus_models": [
+          "llama3.2:1b"
+        ],
+        "outlier_models": []
+      },
+      {
+        "question": "CRISPR-Cas9 off-target effects detection methods",
+        "n_models": 1,
+        "distinct_queries": 1,
+        "agreement": 1.0,
+        "consensus_models": [
+          "llama3.2:1b"
+        ],
+        "outlier_models": []
+      }
+    ],
+    "mean_agreement": 1.0,
+    "note": "1.0 = every model produced the byte-identical query for that question. <1.0 is expected: models legitimately pick different MeSH headings. Within-model reproducibility is query_hash=1.00."
+  }
+}

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deterministic PubMed Search</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Deterministic PubMed Literature Search</h1>
+    <p class="sub">MeSH-explosion + entry-term expansion + domain jargon &rarr; a reproducible, exhaustive PubMed query.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- settings -->
+  <details id="settings" class="card">
+    <summary>Settings &amp; API keys</summary>
+    <div class="grid2">
+      <label>OpenRouter model
+        <input id="model" type="text" placeholder="anthropic/claude-3.5-sonnet" />
+      </label>
+      <label>NCBI email (recommended)
+        <input id="ncbiEmail" type="text" placeholder="you@institution.edu" />
+      </label>
+      <label>OpenRouter API key <span id="orStatus" class="pill"></span>
+        <input id="orKey" type="password" placeholder="leave blank to use server env" />
+      </label>
+      <label>NCBI API key <span id="ncbiStatus" class="pill"></span>
+        <input id="ncbiKey" type="password" placeholder="leave blank to use server env" />
+      </label>
+    </div>
+    <p class="hint">Keys pasted here stay in your browser for this session only and are sent per-request. If left blank, the server's environment variables are used.</p>
+  </details>
+
+  <!-- step 1 -->
+  <section class="card">
+    <h2><span class="n">1</span> Research question</h2>
+    <textarea id="question" rows="3" placeholder="e.g. Does single-cell RNA sequencing reveal disease-associated microglia subtypes in Alzheimer's disease?"></textarea>
+    <div class="row">
+      <div id="domains" class="chips"></div>
+    </div>
+    <textarea id="extra" rows="2" placeholder="Optional scope notes (populations, timeframe, study designs to emphasize)..."></textarea>
+    <button id="mapBtn" class="primary">Map to MeSH &amp; synonyms &rarr;</button>
+    <span id="mapMsg" class="msg"></span>
+  </section>
+
+  <!-- step 2 -->
+  <section id="conceptSection" class="card hidden">
+    <h2><span class="n">2</span> Concepts &mdash; review &amp; edit</h2>
+    <p class="hint">Required blocks are <b>AND</b>ed; terms within a block are <b>OR</b>ed. Optional blocks create auditable sensitivity queries; contextual blocks are saved but not searched.</p>
+    <p id="mapNotes" class="notes"></p>
+    <div id="concepts"></div>
+    <button id="addConcept" class="ghost">+ Add empty concept block</button>
+  </section>
+
+  <!-- step 3 -->
+  <section id="filterSection" class="card hidden">
+    <h2><span class="n">3</span> Inclusion / exclusion criteria</h2>
+    <div class="grid2">
+      <label>Published from (year or YYYY/MM/DD)<input id="dateFrom" type="text" placeholder="2015" /></label>
+      <label>Published to<input id="dateTo" type="text" placeholder="2025" /></label>
+      <label>Languages (comma-sep)<input id="languages" type="text" placeholder="English" /></label>
+      <label>Species
+        <select id="species">
+          <option value="">Any</option>
+          <option value="humans">Humans only</option>
+          <option value="animals">Animals (non-human)</option>
+        </select>
+      </label>
+      <label>Include publication types (comma-sep)<input id="ptInclude" type="text" placeholder="Journal Article" /></label>
+      <label>Exclude publication types (comma-sep)<input id="ptExclude" type="text" placeholder="Review, Comment, Editorial" /></label>
+      <label>Exclude title/abstract terms (comma-sep)<input id="excludeTerms" type="text" placeholder="protocol, retracted" /></label>
+      <label>Custom include fragment<input id="customIncl" type="text" placeholder='e.g. "clinical trial"[pt]' /></label>
+    </div>
+  </section>
+
+  <!-- step 4 -->
+  <section id="compileSection" class="card hidden">
+    <h2><span class="n">4</span> Compile &amp; search</h2>
+    <div class="row">
+      <button id="compileBtn" class="primary">Compile query</button>
+      <label class="inline" title="Derive free-text synonyms from the selected MeSH headings' exploded entry terms instead of the LLM's suggestions. Fully deterministic and reproducible.">
+        <input id="strictMode" type="checkbox" checked /> Strict MeSH synonyms (deterministic)
+      </label>
+      <button id="countBtn" class="ghost" disabled>Preview count</button>
+      <button id="evaluateBtn" class="ghost">Check known PMIDs</button>
+      <label class="inline">Max records
+        <input id="maxRecords" type="number" value="20000" min="1" style="width:110px" />
+      </label>
+      <button id="searchBtn" class="primary" disabled>Run exhaustive search</button>
+    </div>
+    <label>Known relevant PMIDs (comma or space separated; used only to measure recall)
+      <textarea id="knownPmids" rows="2" placeholder="e.g. 12345678, 23456789"></textarea>
+    </label>
+    <pre id="queryBox" class="query hidden"></pre>
+    <div id="queryMeta" class="meta"></div>
+    <span id="searchMsg" class="msg"></span>
+  </section>
+
+  <!-- results -->
+  <section id="resultsSection" class="card hidden">
+    <h2><span class="n">5</span> Results</h2>
+    <div class="row">
+      <span id="resultsSummary" class="meta"></span>
+      <span class="spacer"></span>
+      <button id="dlCsv" class="ghost">Export CSV</button>
+      <button id="dlJsonl" class="ghost">Export JSONL</button>
+      <button id="dlProto" class="ghost">Export protocol</button>
+    </div>
+    <div class="tablewrap">
+      <table id="resultsTable">
+        <thead><tr><th>#</th><th>Title</th><th>Authors</th><th>Journal</th><th>Year</th><th>DOI</th><th>PMID</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+<script src="/app.js"></script>
+</body>
+</html>
