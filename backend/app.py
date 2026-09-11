@@ -47,9 +47,12 @@ class MapReq(BaseModel):
     model: str | None = None
     extra_context: str = ""
     api_key: str | None = None
-    mode: str = "llm"          # "llm" (legacy single-shot proposal) | "closure"
-                                # (self-consistency facet voting + deterministic
-                                # MeSH closure -- see facets.py / closure.py)
+    mode: str = "closure"      # "closure" (self-consistency facet voting + deterministic
+                                # MeSH closure -- see facets.py / closure.py) is the
+                                # measured-better default (data/closure_determinism_frontier.json:
+                                # 0.97/0.97/1.00/0.84 vs "llm"'s 0.58/0.42/0.61/0.28 on the same
+                                # models/questions). "llm" (legacy single-shot proposal) kept for
+                                # comparison, not because it's recommended.
     facet_runs: int = 3        # k for self-consistency voting in "closure" mode
     min_agreement: float = 0.5
 

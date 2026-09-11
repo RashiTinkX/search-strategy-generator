@@ -44,8 +44,8 @@
       <label class="inline" title="llm: model freely proposes MeSH headings + free-text. closure: model only marks facet spans (voted across several samples), MeSH resolution is then 100% deterministic -- no model-chosen vocabulary at all.">
         Strategy
         <select id="mode" style="width:auto">
+          <option value="closure" selected>closure (self-consistency voting -- recommended, measured more reproducible)</option>
           <option value="llm">llm (single-shot proposal)</option>
-          <option value="closure">closure (self-consistency voting)</option>
         </select>
       </label>
       <label class="inline" id="facetRunsRow" title="Number of independent samples voted on for facet segmentation. Higher = more self-consistency signal, more model calls.">
