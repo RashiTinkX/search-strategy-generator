@@ -71,6 +71,17 @@ class ClosureTests(unittest.TestCase):
         self.assertIn("Alzheimer Disease", labels)
         self.assertNotIn("Patients", labels)  # generic-term guard
 
+    def test_epidemiological_generic_term_does_not_dilute_outcome(self):
+        # Live-user-found bug: "incidence" resolving to its own MeSH heading
+        # OR'd alongside "Diarrhea" turned a specific outcome facet into
+        # "Diarrhea OR Incidence-of-anything", diluting precision.
+        q = "incidence of antibiotic-associated diarrhea"
+        toks = closure.tokenize(q)
+        facet = {"name": q, "role": "outcome", "start": 0, "end": len(toks) - 1}
+        block = closure.build_facet(self.ix, q, facet)
+        labels = [m["options"][0]["label"] for m in block["mesh"]]
+        self.assertEqual(labels, ["Diarrhea"])
+
     def test_subsumption_pruning_keeps_broader_only(self):
         d_broad = self.ix.exact("Nervous System")
         d_narrow = self.ix.exact("Neurons")

@@ -47,6 +47,7 @@ patients patient subjects subject participants participant humans human
 study studies research analysis analyses method methods effect effects
 outcome outcomes result results group groups population populations
 disease diseases condition conditions data sample samples
+incidence prevalence frequency rate rates risk severity
 """.split())
 
 
