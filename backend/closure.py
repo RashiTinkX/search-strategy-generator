@@ -152,18 +152,19 @@ def build_facet(ix: MeshIndex, question: str, facet: dict, *,
 
     unmatched_phrase = " ".join(tokens[i] for i in resolved["unmatched_tokens"]
                                  if lo <= i <= hi)
+    span_phrase = " ".join(tokens[lo:hi + 1])
+    pico_role = facet.get("role", "other")
 
     return {
-        "name": facet.get("name") or " ".join(tokens[lo:hi + 1]),
+        "name": facet.get("name") or span_phrase,
         # NOTE: "role" here is the PORTFOLIO role the frontend/app._portfolio()
         # already understands (required|optional|contextual) -- every facet
         # starts required, matching prior behaviour; the PICO classification
         # (population/intervention/...) lives in "pico_role" instead, so it
         # can never silently drop a concept out of portfolio compilation.
         "role": "required",
-        "pico_role": facet.get("role", "other"),
-        "rationale": (f"[{facet.get('role', 'other')}] deterministic closure over span "
-                      f"\"{' '.join(tokens[lo:hi + 1])}\""
+        "pico_role": pico_role,
+        "rationale": (f'[{pico_role}] deterministic closure over span "{span_phrase}"'
                       + (f"; unresolved words: {unmatched_phrase}" if unmatched_phrase else "")
                       + (f"; {len(dropped_subsumed)} subsumed heading(s) pruned"
                          if dropped_subsumed else "")),

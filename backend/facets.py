@@ -16,14 +16,20 @@ draw k independent completions of the same low-entropy task and keep only
 spans a majority of the k runs agree on. Because segmentation is already a
 lower-entropy task than vocabulary generation, and disagreement gets voted
 away instead of silently compiled into the query, agreement should be higher
-than single-shot free-text proposal by construction -- that is a testable
-claim, not an assumption; see eval/determinism_closure.py.
+than single-shot free-text proposal by construction -- measured, not just
+claimed, in eval/eval_closure.py.
 
 `heuristic_facets` is a zero-network, 100%-deterministic fallback (used when
-no LLM key is configured, or wired in as one of the k "voters" itself) so
-this pipeline always has a model-independent path, the same property
-mesh_only gives the upstream tool -- built independently here via simple
-conjunction/punctuation chunking rather than MeSH span-matching.
+no LLM key is configured, or all k LLM samples fail) so this pipeline always
+has a model-independent path, the same property mesh_only gives the upstream
+tool -- built independently here via simple conjunction/punctuation chunking
+rather than MeSH span-matching.
+
+Sync (`segment`, used by the eval harness and any script) and async
+(`segment_async`, used by FastAPI so the event loop isn't blocked) entry
+points share every piece of logic below the HTTP call itself via
+`_parse_facet_response` and `_vote_or_fallback` -- only the request
+transport differs (`requests` vs `httpx`).
 """
 from __future__ import annotations
 
@@ -124,6 +130,9 @@ Return STRICT JSON only:
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 DEFAULT_MODEL = os.environ.get("OPENROUTER_MODEL", "anthropic/claude-3.5-sonnet")
 TIMEOUT = float(os.environ.get("OPENROUTER_TIMEOUT", "120"))
+FACET_MAX_TOKENS = 1200          # small: a facet list is a few short strings, not prose
+FACET_TEMPERATURE = 0.4          # >0 on purpose: k=1 samples must be able to differ,
+                                  # or self-consistency voting has nothing to vote on
 
 # Same provider-routing idea as openrouter_client.py (prefix a model id with
 # "ollama/" or "hf/" to run it locally / via HF Inference instead of
@@ -151,6 +160,12 @@ class FacetLLMError(RuntimeError):
 
 
 def _extract_json(content: str) -> dict:
+    """Strip an optional markdown code fence, then parse the first {...}
+    object found. Deliberately lenient (models often wrap JSON in prose or
+    fences) but not repair-truncated-JSON lenient like openrouter_client's
+    _repair_truncated -- FACET_MAX_TOKENS=1200 makes truncation rare enough
+    that a hard failure (surfaced as FacetLLMError, dropped by segment()'s
+    per-sample try/except) is simpler to reason about than salvaging it."""
     content = (content or "").strip()
     if content.startswith("```"):
         content = content.split("```", 2)[1] if content.count("```") >= 2 else content[3:]
@@ -194,17 +209,44 @@ def _locate_span(question: str, text: str) -> tuple[int, int] | None:
     return None
 
 
+def _parse_facet_response(question: str, content: str) -> list[dict]:
+    """Model JSON content -> validated facet dicts (name/role/start/end).
+    Shared by the sync and async paths so a parsing fix only needs to happen
+    once. A facet with a non-verbatim or unmappable span is dropped rather
+    than guessed at (see _locate_span); role is sanitized via
+    _normalize_pico_role rather than trusted as-is."""
+    parsed = _extract_json(content)
+    out = []
+    for f in parsed.get("facets", []):
+        if not isinstance(f, dict):
+            continue
+        text = str(f.get("text", "")).strip()
+        if not text:
+            continue
+        span = _locate_span(question, text)
+        if span is None:
+            continue  # unmappable / non-verbatim span: drop rather than guess
+        role = str(f.get("role", "other")).strip().lower()
+        out.append({"name": text, "role": _normalize_pico_role(role),
+                     "start": span[0], "end": span[1]})
+    return out
+
+
 def _one_llm_pass(question: str, *, model: str | None, api_key: str | None,
                    seed: int) -> list[dict]:
+    """One synchronous facet-segmentation sample. Raises FacetLLMError on any
+    transport/auth/parse failure -- callers (segment(), the eval harness)
+    catch this per-sample so one bad draw doesn't sink the whole k-sample
+    vote."""
     provider, upstream_model = _resolve_provider(model or DEFAULT_MODEL)
     key = api_key or os.environ.get(provider["key_env"], "")
     if provider["requires_key"] and not key:
         raise FacetLLMError(f"{provider['key_env']} not set")
     payload = {
         "model": upstream_model,
-        "temperature": 0.4,          # slight temp: k=1 samples must differ or voting is moot
+        "temperature": FACET_TEMPERATURE,
         "seed": seed,
-        "max_tokens": 1200,
+        "max_tokens": FACET_MAX_TOKENS,
         "messages": [
             {"role": "system", "content": FACET_SYSTEM_PROMPT},
             {"role": "user", "content": question},
@@ -224,27 +266,15 @@ def _one_llm_pass(question: str, *, model: str | None, api_key: str | None,
     r = requests.post(provider["url"], headers=headers, json=payload, timeout=TIMEOUT)
     if r.status_code != 200:
         raise FacetLLMError(f"LLM {r.status_code}: {r.text[:300]}")
-    data = r.json()
-    content = data["choices"][0]["message"]["content"]
-    parsed = _extract_json(content)
-    out = []
-    for f in parsed.get("facets", []):
-        if not isinstance(f, dict):
-            continue
-        text = str(f.get("text", "")).strip()
-        role = str(f.get("role", "other")).strip().lower()
-        if not text:
-            continue
-        span = _locate_span(question, text)
-        if span is None:
-            continue  # unmappable / non-verbatim span: drop rather than guess
-        out.append({"name": text, "role": _normalize_pico_role(role),
-                     "start": span[0], "end": span[1]})
-    return out
+    content = r.json()["choices"][0]["message"]["content"]
+    return _parse_facet_response(question, content)
 
 
 async def _one_llm_pass_async(question: str, *, model: str | None, api_key: str | None,
                                seed: int) -> list[dict]:
+    """Async twin of _one_llm_pass -- identical request/response handling,
+    only the HTTP client differs (httpx, so FastAPI's event loop isn't
+    blocked while k samples are in flight)."""
     import httpx
     provider, upstream_model = _resolve_provider(model or DEFAULT_MODEL)
     key = api_key or os.environ.get(provider["key_env"], "")
@@ -252,9 +282,9 @@ async def _one_llm_pass_async(question: str, *, model: str | None, api_key: str 
         raise FacetLLMError(f"{provider['key_env']} not set")
     payload = {
         "model": upstream_model,
-        "temperature": 0.4,
+        "temperature": FACET_TEMPERATURE,
         "seed": seed,
-        "max_tokens": 1200,
+        "max_tokens": FACET_MAX_TOKENS,
         "messages": [
             {"role": "system", "content": FACET_SYSTEM_PROMPT},
             {"role": "user", "content": question},
@@ -273,21 +303,7 @@ async def _one_llm_pass_async(question: str, *, model: str | None, api_key: str 
     if r.status_code != 200:
         raise FacetLLMError(f"LLM {r.status_code}: {r.text[:300]}")
     content = r.json()["choices"][0]["message"]["content"]
-    parsed = _extract_json(content)
-    out = []
-    for f in parsed.get("facets", []):
-        if not isinstance(f, dict):
-            continue
-        text = str(f.get("text", "")).strip()
-        role = str(f.get("role", "other")).strip().lower()
-        if not text:
-            continue
-        span = _locate_span(question, text)
-        if span is None:
-            continue
-        out.append({"name": text, "role": _normalize_pico_role(role),
-                     "start": span[0], "end": span[1]})
-    return out
+    return _parse_facet_response(question, content)
 
 
 def _cluster_and_vote(runs: list[list[dict]], min_runs_agree: int) -> list[dict]:
@@ -342,14 +358,41 @@ def _cluster_and_vote(runs: list[list[dict]], min_runs_agree: int) -> list[dict]
     return out
 
 
+def _needed_agreement(n_runs: int, min_agreement: float) -> int:
+    """Smallest vote count satisfying min_agreement, always >= 1. Shared by
+    segment()/segment_async() -- previously duplicated inline and the async
+    copy was missing the floor-at-1 guard, so min_agreement=0 would have
+    accepted a cluster with zero supporting runs there but not in segment()."""
+    return max(1, int((n_runs * min_agreement) + 0.999999))
+
+
+def _vote_or_fallback(question: str, runs: list[list[dict]], errors: list[str],
+                      min_agreement: float) -> dict:
+    """Shared tail end of segment()/segment_async(): vote on whatever samples
+    succeeded, falling back to the deterministic heuristic if none succeeded
+    or nothing survived the vote."""
+    if not runs:
+        return {"facets": heuristic_facets(question), "mode": "heuristic_fallback",
+                "runs": 0, "errors": errors}
+    voted = _cluster_and_vote(runs, _needed_agreement(len(runs), min_agreement))
+    if not voted:
+        return {"facets": heuristic_facets(question), "mode": "heuristic_fallback",
+                "runs": len(runs), "errors": errors}
+    return {"facets": voted, "mode": "llm_voted", "runs": len(runs), "errors": errors}
+
+
+def _can_call_llm(model: str | None, api_key: str | None) -> bool:
+    provider, _ = _resolve_provider(model or DEFAULT_MODEL)
+    have_key = bool(api_key or os.environ.get(provider["key_env"], ""))
+    return not provider["requires_key"] or have_key
+
+
 def segment(question: str, *, model: str | None = None, api_key: str | None = None,
             k: int = 3, use_llm: bool = True, min_agreement: float = 0.5) -> dict:
     """Synchronous k-sample self-consistency segmentation (used by the eval
     harness and any sync caller). Falls back to heuristic_facets if no key is
     configured (for a key-requiring provider) or every LLM pass fails."""
-    provider, _ = _resolve_provider(model or DEFAULT_MODEL)
-    have_key = bool(api_key or os.environ.get(provider["key_env"], ""))
-    if not use_llm or (provider["requires_key"] and not have_key):
+    if not use_llm or not _can_call_llm(model, api_key):
         return {"facets": heuristic_facets(question), "mode": "heuristic", "runs": 0}
     runs: list[list[dict]] = []
     errors: list[str] = []
@@ -358,15 +401,7 @@ def segment(question: str, *, model: str | None = None, api_key: str | None = No
             runs.append(_one_llm_pass(question, model=model, api_key=api_key, seed=1000 + i))
         except FacetLLMError as e:
             errors.append(str(e))
-    if not runs:
-        return {"facets": heuristic_facets(question), "mode": "heuristic_fallback",
-                 "runs": 0, "errors": errors}
-    need = max(1, int((len(runs) * min_agreement) + 0.999999))
-    voted = _cluster_and_vote(runs, need)
-    if not voted:
-        return {"facets": heuristic_facets(question), "mode": "heuristic_fallback",
-                 "runs": len(runs), "errors": errors}
-    return {"facets": voted, "mode": "llm_voted", "runs": len(runs), "errors": errors}
+    return _vote_or_fallback(question, runs, errors, min_agreement)
 
 
 async def segment_async(question: str, *, model: str | None = None,
@@ -375,9 +410,7 @@ async def segment_async(question: str, *, model: str | None = None,
     """Async k-sample self-consistency segmentation (used by FastAPI). Runs
     the k model calls concurrently so latency stays close to one call."""
     import asyncio
-    provider, _ = _resolve_provider(model or DEFAULT_MODEL)
-    have_key = bool(api_key or os.environ.get(provider["key_env"], ""))
-    if not use_llm or (provider["requires_key"] and not have_key):
+    if not use_llm or not _can_call_llm(model, api_key):
         return {"facets": heuristic_facets(question), "mode": "heuristic", "runs": 0}
     tasks = [_one_llm_pass_async(question, model=model, api_key=api_key, seed=1000 + i)
              for i in range(max(1, k))]
@@ -389,12 +422,4 @@ async def segment_async(question: str, *, model: str | None = None,
             errors.append(str(r))
         else:
             runs.append(r)
-    if not runs:
-        return {"facets": heuristic_facets(question), "mode": "heuristic_fallback",
-                 "runs": 0, "errors": errors}
-    need = int((len(runs) * min_agreement) + 0.999999)
-    voted = _cluster_and_vote(runs, need)
-    if not voted:
-        return {"facets": heuristic_facets(question), "mode": "heuristic_fallback",
-                 "runs": len(runs), "errors": errors}
-    return {"facets": voted, "mode": "llm_voted", "runs": len(runs), "errors": errors}
+    return _vote_or_fallback(question, runs, errors, min_agreement)

@@ -55,7 +55,8 @@ def coverage_gaps(question: str, voted_facets: list[dict]) -> list[dict]:
 
 
 def resolve_coverage_gaps(ix: MeshIndex, question: str, voted_facets: list[dict],
-                          *, explode: bool = True, max_freetext: int | None = None) -> list[dict]:
+                          *, gaps: list[dict] | None = None, explode: bool = True,
+                          max_freetext: int | None = None) -> list[dict]:
     """
     For every coverage gap, run the SAME deterministic closure engine used
     for voted facets over the gap's token range, and tag the resulting block
@@ -64,9 +65,17 @@ def resolve_coverage_gaps(ix: MeshIndex, question: str, voted_facets: list[dict]
     role="required" (visible, not opted out of the query) -- the reviewer
     can demote or remove it in the UI same as any other block, but it starts
     counted rather than starting lost.
+
+    Pass `gaps` if the caller already computed coverage_gaps(question,
+    voted_facets) -- e.g. _finish() below needs the gap count for its notes
+    string regardless, so it computes gaps once and hands them here instead
+    of this function silently recomputing the same (cheap, but still
+    redundant) scan.
     """
+    if gaps is None:
+        gaps = coverage_gaps(question, voted_facets)
     out = []
-    for gap in coverage_gaps(question, voted_facets):
+    for gap in gaps:
         facet = {"name": None, "role": "other", **gap}
         block = closure.build_facet(ix, question, facet, explode=explode,
                                     max_freetext=max_freetext)
@@ -100,8 +109,8 @@ def _finish(question: str, ix: MeshIndex, seg: dict, model: str | None, *,
     concepts = closure.build_concepts(ix, question, seg["facets"], explode=explode,
                                       max_freetext=max_freetext)
     gaps = coverage_gaps(question, seg["facets"])
-    gap_blocks = resolve_coverage_gaps(ix, question, seg["facets"], explode=explode,
-                                       max_freetext=max_freetext) if gaps else []
+    gap_blocks = resolve_coverage_gaps(ix, question, seg["facets"], gaps=gaps,
+                                       explode=explode, max_freetext=max_freetext) if gaps else []
     concepts.extend(gap_blocks)
     notes = (f"facet segmentation mode={seg['mode']} runs={seg['runs']}"
              + (f" agreement>={min_agreement}" if seg["mode"] == "llm_voted" else "")
