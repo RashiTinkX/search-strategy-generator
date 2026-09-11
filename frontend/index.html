@@ -41,6 +41,17 @@
     <h2><span class="n">1</span> Research question</h2>
     <textarea id="question" rows="3" placeholder="e.g. Does single-cell RNA sequencing reveal disease-associated microglia subtypes in Alzheimer's disease?"></textarea>
     <div class="row">
+      <label class="inline" title="llm: model freely proposes MeSH headings + free-text. closure: model only marks facet spans (voted across several samples), MeSH resolution is then 100% deterministic -- no model-chosen vocabulary at all.">
+        Strategy
+        <select id="mode" style="width:auto">
+          <option value="llm">llm (single-shot proposal)</option>
+          <option value="closure">closure (self-consistency voting)</option>
+        </select>
+      </label>
+      <label class="inline" id="facetRunsRow" title="Number of independent samples voted on for facet segmentation. Higher = more self-consistency signal, more model calls.">
+        Facet runs (k)
+        <input id="facetRuns" type="number" value="3" min="1" max="9" style="width:60px" />
+      </label>
       <div id="domains" class="chips"></div>
     </div>
     <textarea id="extra" rows="2" placeholder="Optional scope notes (populations, timeframe, study designs to emphasize)..."></textarea>

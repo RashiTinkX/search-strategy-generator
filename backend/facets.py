@@ -209,8 +209,12 @@ def _one_llm_pass(question: str, *, model: str | None, api_key: str | None,
             {"role": "system", "content": FACET_SYSTEM_PROMPT},
             {"role": "user", "content": question},
         ],
-        "response_format": {"type": "json_object"},
     }
+    if provider["url"] != _PROVIDERS["hf"]["url"]:
+        # HF's router can 422 on the plain json_object mode depending on which
+        # backend it forwards to; the system prompt already demands strict
+        # JSON and _extract_json parses leniently, so just skip it there.
+        payload["response_format"] = {"type": "json_object"}
     headers = {"Content-Type": "application/json"}
     if key:
         headers["Authorization"] = f"Bearer {key}"
@@ -255,8 +259,9 @@ async def _one_llm_pass_async(question: str, *, model: str | None, api_key: str 
             {"role": "system", "content": FACET_SYSTEM_PROMPT},
             {"role": "user", "content": question},
         ],
-        "response_format": {"type": "json_object"},
     }
+    if provider["url"] != _PROVIDERS["hf"]["url"]:
+        payload["response_format"] = {"type": "json_object"}
     headers = {"Content-Type": "application/json"}
     if key:
         headers["Authorization"] = f"Bearer {key}"

@@ -51,6 +51,12 @@ function selectedDomains() {
   return [...document.querySelectorAll("#domains .chip.on")].map((c) => c.textContent);
 }
 
+function updateModeUI() {
+  $("facetRunsRow").style.display = $("mode").value === "closure" ? "" : "none";
+}
+$("mode").onchange = updateModeUI;
+updateModeUI();
+
 // ---------------------------------------------------------------- step 1: map
 $("mapBtn").onclick = async () => {
   const q = $("question").value.trim();
@@ -59,17 +65,23 @@ $("mapBtn").onclick = async () => {
   $("mapBtn").disabled = true;
   try {
     const k = keys();
+    const mode = $("mode").value;
     const res = await api("/api/map", {
-      question: q, domains: selectedDomains(),
+      question: q, domains: selectedDomains(), mode,
       model: k.model, extra_context: $("extra").value.trim(), api_key: k.or,
+      facet_runs: parseInt($("facetRuns").value, 10) || 3,
     });
     state.concepts = res.concepts.map(normalizeConcept);
-    $("mapNotes").textContent = res.notes ? "Notes: " + res.notes : "";
+    const gaps = res.coverage_gaps && res.coverage_gaps.length;
+    $("mapNotes").textContent = [
+      res.notes ? "Notes: " + res.notes : "",
+      gaps ? `${gaps} coverage gap(s) recovered as extra block(s) -- review them below.` : "",
+    ].filter(Boolean).join("  ");
     renderConcepts();
     $("conceptSection").classList.remove("hidden");
     $("filterSection").classList.remove("hidden");
     $("compileSection").classList.remove("hidden");
-    setMsg("mapMsg", `Model: ${res.model}. Review the ${state.concepts.length} concept blocks below.`);
+    setMsg("mapMsg", `Mode: ${res.mode || mode}. Model: ${res.model}. Review the ${state.concepts.length} concept blocks below.`);
   } catch (e) {
     setMsg("mapMsg", e.message, true);
   } finally {

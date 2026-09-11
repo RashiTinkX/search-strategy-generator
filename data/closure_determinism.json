@@ -1,24 +1,88 @@
 {
   "models": [
-    "ollama/llama3.2:1b"
+    "hf/meta-llama/Llama-3.1-8B-Instruct"
   ],
-  "runs_per_cell": 2,
+  "runs_per_cell": 3,
   "facet_k": 3,
-  "timestamp": "2026-09-10 18:56:57",
+  "timestamp": "2026-09-11 05:48:41",
   "results": [
+    {
+      "mode": "llm",
+      "question": "What is the effect of RNA sequencing on hippocampal neurons in Alzheimer Disease patients?",
+      "within_model": {
+        "hf/meta-llama/Llama-3.1-8B-Instruct": 0.667
+      },
+      "cross_model": null,
+      "heading_jaccard": 0.867,
+      "pmid_jaccard": 1.0,
+      "distinct_queries": 2,
+      "retrieval_errors": [],
+      "total_runs": 3,
+      "total_attempted": 3
+    },
+    {
+      "mode": "closure",
+      "question": "What is the effect of RNA sequencing on hippocampal neurons in Alzheimer Disease patients?",
+      "within_model": {
+        "hf/meta-llama/Llama-3.1-8B-Instruct": 0.667
+      },
+      "cross_model": null,
+      "heading_jaccard": 0.5,
+      "pmid_jaccard": 0.021,
+      "distinct_queries": 2,
+      "retrieval_errors": [],
+      "total_runs": 3,
+      "total_attempted": 3
+    },
+    {
+      "mode": "llm",
+      "question": "Does metformin reduce cardiovascular mortality in patients with type 2 diabetes?",
+      "within_model": {
+        "hf/meta-llama/Llama-3.1-8B-Instruct": 0.0
+      },
+      "cross_model": null,
+      "heading_jaccard": null,
+      "total_runs": 0,
+      "total_attempted": 3
+    },
     {
       "mode": "closure",
       "question": "Does metformin reduce cardiovascular mortality in patients with type 2 diabetes?",
       "within_model": {
-        "ollama/llama3.2:1b": 1.0
+        "hf/meta-llama/Llama-3.1-8B-Instruct": 1.0
       },
       "cross_model": null,
       "heading_jaccard": 1.0,
       "pmid_jaccard": 1.0,
       "distinct_queries": 1,
       "retrieval_errors": [],
-      "total_runs": 2,
-      "total_attempted": 2
+      "total_runs": 3,
+      "total_attempted": 3
+    },
+    {
+      "mode": "llm",
+      "question": "Does mindfulness-based stress reduction reduce anxiety symptoms in breast cancer patients undergoing chemotherapy?",
+      "within_model": {
+        "hf/meta-llama/Llama-3.1-8B-Instruct": 0.0
+      },
+      "cross_model": null,
+      "heading_jaccard": null,
+      "total_runs": 0,
+      "total_attempted": 3
+    },
+    {
+      "mode": "closure",
+      "question": "Does mindfulness-based stress reduction reduce anxiety symptoms in breast cancer patients undergoing chemotherapy?",
+      "within_model": {
+        "hf/meta-llama/Llama-3.1-8B-Instruct": 1.0
+      },
+      "cross_model": null,
+      "heading_jaccard": 1.0,
+      "pmid_jaccard": 1.0,
+      "distinct_queries": 1,
+      "retrieval_errors": [],
+      "total_runs": 3,
+      "total_attempted": 3
     }
   ]
 }

@@ -109,8 +109,12 @@ def _build_request(question, domains, model, extra_context, seed):
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_msg},
         ],
-        "response_format": {"type": "json_object"},
     }
+    if provider["url"] != PROVIDERS["hf"]["url"]:
+        # HF's router can 422 on plain json_object mode depending on which
+        # backend it forwards to; the system prompt already demands strict
+        # JSON and _loads_lenient parses leniently, so just skip it there.
+        payload["response_format"] = {"type": "json_object"}
     if seed is not None:  # best-effort; ignored by providers that don't support it
         payload["seed"] = seed
     headers = {"Content-Type": "application/json"}
