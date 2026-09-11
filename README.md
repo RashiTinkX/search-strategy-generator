@@ -120,11 +120,63 @@ purpose upstream, just reached differently. Call it via
 `{"mode": "closure", "facet_runs": 3, "min_agreement": 0.5}` on `/api/map`.
 
 Measure it yourself before trusting either mode's number:
-`.venv/Scripts/python.exe eval/eval_closure.py --model ollama/llama3.2:1b --runs 5`
-runs both `llm` and `closure` against the same live model and scores
-query-hash determinism across the reruns (same metric `test.py` already uses:
-size of the largest identical-hash group ÷ N). No API key required if you
-point `--model` at a local Ollama model.
+`.venv/Scripts/python.exe eval/eval_closure.py --models anthropic/claude-haiku-4.5 --modes llm,closure --runs 3 --retrieval`
+runs both `llm` and `closure` against the same live model(s) and scores four
+metrics — within-model, cross-model, heading Jaccard, and PMID Jaccard —
+against real PubMed data. No API key required if you point `--models` at a
+local Ollama model instead.
+
+## Measured results
+
+`eval/eval_closure.py` measures this rather than asserting it, same as the
+upstream project's own `eval/` does for its `hybrid` mode — and the results
+are directly comparable, since both use the same four metric definitions
+(within-model / cross-model / heading Jaccard / PMID Jaccard).
+
+**Headline: Claude Haiku 4.5 + Claude Sonnet 5, 6 questions × 3 runs, live retrieval**
+(`data/closure_determinism_frontier.json`):
+
+| strategy | within-model | cross-model | heading Jaccard | PMID Jaccard |
+|---|---|---|---|---|
+| upstream `llm` v2 (reference) | 0.71 | 0.24 | 0.47 | 0.18 |
+| upstream `hybrid` (reference) | 0.90 | 0.76 | 0.95 | 0.68 |
+| this project's `llm` mode | 0.583 | 0.417 | 0.609 | 0.282 |
+| **this project's `closure` mode** | **0.972** | **0.972** | **1.000** | **0.839** |
+
+The cleanest part of that result doesn't even need the upstream comparison:
+`llm` mode and `closure` mode were run against the *identical* two models on
+the *identical* six questions in the *same* codebase — a fully controlled
+A/B test with no cross-project confound. `closure` mode's cross-model score
+is more than double `llm` mode's using the same models. The single most
+telling data point: Claude Sonnet 5 — a strong, capable model — scored
+`within-model = 0.33` on 5 of 6 questions in `llm` mode, meaning it gave a
+*different* answer on 2 of every 3 reruns of the exact same question. That's
+not a weak-model artifact; it's direct evidence that unconstrained vocabulary
+generation is inherently unstable, which is the instability `closure` mode's
+design (self-consistency-voted span marking, zero model-chosen vocabulary) is
+built to remove.
+
+**Caveats, read before citing this table:**
+
+- One question (RNA-seq / hippocampal neurons / Alzheimer's) scored a PMID
+  Jaccard of just 0.035 in `closure` mode despite a *perfect* heading Jaccard
+  of 1.00 — identical MeSH headings still retrieved almost entirely different
+  papers, most likely from a free-text-term or explosion-scope difference
+  invisible at the heading level. Real data has real outliers; this table's
+  means don't show that unless you look at `data/closure_determinism_frontier.json`.
+- A separate run with two small, free, local models (Llama 3.2 1B + Qwen 2.5
+  1.5B — `data/closure_determinism_crossmodel.json`) scored `closure` mode at
+  cross-model 0.60 — barely above the 0.50 chance floor for 2 models, and
+  *below* what `llm` mode scored on the one question it managed to complete
+  before hitting a credit wall. Model capability is a real confound: this
+  architecture's advantage was only clearly demonstrated with capable models,
+  not weak ones. Reported here rather than omitted.
+- Comparing against upstream's *published* 0.90/0.76/0.95/0.68 still carries
+  a cross-project caveat (different codebase, different exact 7 models,
+  different MeSH index build) — it's a fair, good-faith comparison now that
+  model capability isn't a confound on this side, but not a controlled trial
+  of both codebases side by side. The `llm`-vs-`closure` comparison above,
+  within this one run, doesn't have that caveat.
 
 ## Layout
 
@@ -146,6 +198,7 @@ eval/
 data/
   domain_terms.json   editable domain vocabularies
   mesh.sqlite         generated index
+  closure_determinism*.json  eval_closure.py output -- see Measured results above
   searches/           saved runs (results + protocol.json)
 tests/
   test_quality_features.py   portfolio + date-scope regression checks
