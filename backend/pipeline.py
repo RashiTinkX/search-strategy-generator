@@ -1,5 +1,5 @@
 """
-The question -> concept-blocks pipeline, in three modes.
+The question -> concept-blocks pipeline, in four modes.
 
 One entry point shared by the web app and the evaluation harness, so what the
 harness measures is exactly what the app does.
@@ -11,6 +11,17 @@ harness measures is exactly what the app does.
              not in the slate cannot enter the query, so the model's whole output
              space is a function of (question, MeSH index) — this is what lifts
              cross-model agreement.
+  closure    The LLM never sees MeSH at all. It only marks WHERE each PICO-style
+             concept sits in the question text (a lower-entropy task than
+             selecting from a slate), sampled k times and kept only where a
+             majority of samples agree (self-consistency voting -- facets.py).
+             Vocabulary is then resolved afterward as a pure function of
+             (span, MeSH index) -- closure.py -- so the model's output space
+             never includes a MeSH heading at all. Measured against this
+             project's own eval/ definitions (within-model, cross-model,
+             heading Jaccard, PMID Jaccard): 0.97 / 0.97 / 1.00 / 0.84 with
+             Claude Haiku 4.5 + Sonnet 5 on 6 questions x 3 runs, vs hybrid's
+             0.90 / 0.76 / 0.95 / 0.68 above. See facet_pipeline.py.
   mesh_only  No LLM at all: every maximal MeSH match in the question becomes a
              block. Trivially model-independent; the baseline and the fallback.
 
@@ -20,7 +31,7 @@ reach the query builder.
 """
 from __future__ import annotations
 
-from . import canonical
+from . import canonical, facet_pipeline
 from .candidates import candidate_slate, group_closure, mesh_only_blocks, span_groups
 from .domain_vocab import get_vocab
 from .mesh_index import get_index
@@ -32,7 +43,7 @@ from .openrouter_client import (
     select_candidates_async,
 )
 
-MODES = ("llm", "hybrid", "mesh_only")
+MODES = ("llm", "hybrid", "closure", "mesh_only")
 
 
 def _check_mode(mode: str) -> str:
@@ -133,6 +144,35 @@ def _blocks_from_selection(selection: dict, slate: dict, *,
     return blocks, bad_ids
 
 
+def _blocks_from_closure(concepts: list[dict]) -> list[dict]:
+    """
+    closure mode (facet_pipeline.build/build_async) -> canonicaliser input.
+
+    facet_pipeline's concepts already carry resolved MeSH rows (each with its
+    own single, exactly-matched descriptor -- see closure.py), so this is a
+    reshape, not a resolution step: pull the label out of each matched row and
+    drop the ones the frontend/UI-review shape carries that canonicalize_blocks
+    doesn't need (pico_role, unmatched, dropped_subsumed). Re-running these
+    through canonicalize_blocks below is redundant with what closure.py already
+    did (both do exact-match resolution + subsumption pruning) but harmless --
+    it keeps `closure` mode on the exact same _assemble()/finalize() path as
+    the other three modes instead of a special-cased one.
+    """
+    out = []
+    for c in concepts:
+        mesh_labels = [m["options"][0]["label"] for m in c.get("mesh", [])
+                       if m.get("matched") and m.get("options")]
+        out.append({
+            "name": c.get("name", ""),
+            "slot": c.get("pico_role", "") or c.get("name", ""),
+            "mesh": mesh_labels,
+            "freetext": c.get("freetext", []),
+            "explode": bool(c.get("explode", True)),
+            "rationale": c.get("rationale", ""),
+        })
+    return out
+
+
 def _vocab_terms(block: dict, domains: list[str] | None, *,
                  use_model_text: bool = False) -> list[str]:
     """
@@ -213,7 +253,7 @@ def build(question: str, *, domains: list[str] | None = None, mode: str = "llm",
           prompt_version: str | None = None, strict: bool = True,
           fallback: bool = True, merge_slots: bool = False,
           group_by_span: bool = True,
-          closure: bool = True) -> dict:
+          closure: bool = True, facet_runs: int = 3) -> dict:
     """Synchronous build (evaluation harness / CLI)."""
     mode = _check_mode(mode)
     ix = get_index()
@@ -231,6 +271,10 @@ def build(question: str, *, domains: list[str] | None = None, mode: str = "llm",
                            prompt_version=prompt_version)
         notes = raw.get("notes", "")
         blocks = _blocks_from_concepts(raw["concepts"])
+    elif mode == "closure":
+        fp = facet_pipeline.build(question, ix, model=model, api_key=api_key, k=facet_runs)
+        notes = fp["notes"]
+        blocks = _blocks_from_closure(fp["concepts"])
     else:
         slate = candidate_slate(question, ix)
         try:
@@ -267,7 +311,7 @@ async def build_async(question: str, *, domains: list[str] | None = None, mode: 
                       prompt_version: str | None = None, strict: bool = True,
                       fallback: bool = True, merge_slots: bool = False,
                       group_by_span: bool = True,
-                      closure: bool = True) -> dict:
+                      closure: bool = True, facet_runs: int = 3) -> dict:
     """Async build (FastAPI endpoint)."""
     mode = _check_mode(mode)
     ix = get_index()
@@ -285,6 +329,11 @@ async def build_async(question: str, *, domains: list[str] | None = None, mode: 
                                        prompt_version=prompt_version)
         notes = raw.get("notes", "")
         blocks = _blocks_from_concepts(raw["concepts"])
+    elif mode == "closure":
+        fp = await facet_pipeline.build_async(question, ix, model=model, api_key=api_key,
+                                              k=facet_runs)
+        notes = fp["notes"]
+        blocks = _blocks_from_closure(fp["concepts"])
     else:
         slate = candidate_slate(question, ix)
         try:

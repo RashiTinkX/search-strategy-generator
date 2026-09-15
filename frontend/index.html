@@ -49,8 +49,13 @@
         <select id="mode" style="width:auto">
           <option value="hybrid">Hybrid — MeSH lookup proposes, model selects (most reproducible with an LLM)</option>
           <option value="llm">LLM — model proposes freely (widest coverage, least agreement across models)</option>
+          <option value="closure">Closure — model only marks facet spans, voted by self-consistency; MeSH resolution is 100% deterministic (measured 0.97 within/cross-model vs hybrid's 0.90/0.76 — see eval/eval_closure.py)</option>
           <option value="mesh_only">MeSH only — no LLM (fully model-independent)</option>
         </select>
+      </label>
+      <label class="inline" id="facetRunsRow" title="Number of independent samples voted on for facet segmentation (closure mode only). Higher = more self-consistency signal, more model calls.">
+        Facet runs (k)
+        <input id="facetRuns" type="number" value="3" min="1" max="9" style="width:60px" />
       </label>
     </div>
     <button id="mapBtn" class="primary">Map to MeSH &amp; synonyms &rarr;</button>

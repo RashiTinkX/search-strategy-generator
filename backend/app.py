@@ -46,8 +46,9 @@ class MapReq(BaseModel):
     model: str | None = None
     extra_context: str = ""
     api_key: str | None = None
-    mode: str = "hybrid"                 # llm | hybrid | mesh_only
+    mode: str = "hybrid"                 # llm | hybrid | closure | mesh_only
     prompt_version: str | None = None    # llm mode only: v1 | v2
+    facet_runs: int = 3                  # closure mode only: k for self-consistency voting
 
 
 class ExpandReq(BaseModel):
@@ -163,7 +164,7 @@ async def api_map(req: MapReq):
         build = await pipeline.build_async(
             req.question, domains=req.domains, mode=req.mode, model=req.model,
             api_key=req.api_key, extra_context=req.extra_context,
-            prompt_version=req.prompt_version,
+            prompt_version=req.prompt_version, facet_runs=req.facet_runs,
         )
     except OpenRouterError as e:
         raise HTTPException(502, str(e))

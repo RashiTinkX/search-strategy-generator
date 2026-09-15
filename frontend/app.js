@@ -51,6 +51,12 @@ function selectedDomains() {
   return [...document.querySelectorAll("#domains .chip.on")].map((c) => c.textContent);
 }
 
+function updateModeUI() {
+  $("facetRunsRow").style.display = $("mode").value === "closure" ? "" : "none";
+}
+$("mode").onchange = updateModeUI;
+updateModeUI();
+
 // ---------------------------------------------------------------- step 1: map
 $("mapBtn").onclick = async () => {
   const q = $("question").value.trim();
@@ -62,6 +68,7 @@ $("mapBtn").onclick = async () => {
     const res = await api("/api/map", {
       question: q, domains: selectedDomains(), mode: $("mode").value,
       model: k.model, extra_context: $("extra").value.trim(), api_key: k.or,
+      facet_runs: parseInt($("facetRuns").value, 10) || 3,
     });
     state.concepts = res.concepts.map(normalizeConcept);
     $("mapNotes").innerHTML = mapNotes(res);
